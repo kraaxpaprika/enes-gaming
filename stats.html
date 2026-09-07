@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Progress — Enes Gaming</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"></div>
+
+  <div class="card">
+    <div class="mascot-row" style="justify-content:flex-start">
+      <img class="mascot" id="mascot" src="assets/img/mascot.svg" alt="Mascot" style="width:86px">
+      <div class="speech" id="speech">Look how much you have learned!</div>
+    </div>
+
+    <div class="tiles mt">
+      <div class="tile"><div class="v" id="t-time">0s</div><div class="k">Total play time</div></div>
+      <div class="tile t2"><div class="v" id="t-plays">0</div><div class="k">Games finished</div></div>
+      <div class="tile t3"><div class="v" id="t-acc">0%</div><div class="k">Correct answers</div></div>
+      <div class="tile t4"><div class="v" id="t-points">0</div><div class="k">Points collected</div></div>
+      <div class="tile t5"><div class="v" id="t-streak">0</div><div class="k">Day streak 🔥</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>⏱️ Play time — last 7 days</h3>
+    <div class="chart" id="days"></div>
+  </div>
+
+  <div class="card">
+    <h3>📈 Score history</h3>
+    <div id="sparkWrap"><svg class="spark" id="spark"></svg></div>
+    <p class="footer-note" id="sparkNote">Your last games, oldest on the left.</p>
+  </div>
+
+  <div class="card">
+    <h3>🎮 Every game</h3>
+    <div id="gamestats"></div>
+  </div>
+
+  <div class="card">
+    <h3>🏅 Badges</h3>
+    <div class="badges" id="badges"></div>
+  </div>
+
+  <div class="card">
+    <h3>🕘 Recent games</h3>
+    <div id="histWrap"></div>
+  </div>
+
+  <div class="card">
+    <h3>💾 Backup</h3>
+    <p style="color:var(--muted);margin-top:0">
+      Progress is saved as JSON in this browser, on this device only. Download it to keep a copy,
+      or load a file to move the progress to another computer or phone.
+    </p>
+    <div class="row">
+      <button class="btn sm" id="exportBtn">⬇️ Download progress (JSON)</button>
+      <button class="btn sm ghost" id="importBtn">⬆️ Load a backup</button>
+      <button class="btn sm red" id="resetBtn">🗑️ Reset everything</button>
+      <input type="file" id="fileInput" accept="application/json,.json" hidden>
+    </div>
+    <div class="feedback" id="backupMsg" style="font-size:16px"></div>
+  </div>
+
+  <p class="footer-note">Made with ❤️ for Enes</p>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+EG.Auth.guard();
+EG.buildTopbar("My Progress 📊", "Scores, time and badges", "hub.html");
+
+var $ = function (id) { return document.getElementById(id); };
+
+function render() {
+  var d = EGStats.all();
+  var t = EGStats.totals();
+
+  $("t-time").textContent = EGStats.fmtTime(t.timeMs);
+  $("t-plays").textContent = t.plays;
+  $("t-acc").textContent = t.accuracy + "%";
+  $("t-points").textContent = t.points;
+  $("t-streak").textContent = EGStats.streak();
+
+  $("speech").textContent = t.plays === 0
+    ? "No games yet — let's play one! 🎮"
+    : "You have played " + t.plays + (t.plays === 1 ? " game" : " games") + ". Keep going!";
+
+  /* ----- last 7 days ----- */
+  var days = EGStats.lastDays(7);
+  var maxMs = Math.max.apply(null, days.map(function (x) { return x.ms; }).concat([60000]));
+  $("days").innerHTML = days.map(function (x, i) {
+    var h = Math.max(4, Math.round(x.ms / maxMs * 120));
+    var isToday = i === days.length - 1;
+    return '<div class="col' + (isToday ? " today" : "") + '">' +
+             '<span class="val">' + (x.ms ? EGStats.fmtTime(x.ms) : "") + '</span>' +
+             '<i style="height:' + h + 'px"></i>' +
+             '<span class="lbl">' + (isToday ? "Today" : x.label) + '</span>' +
+           '</div>';
+  }).join("");
+
+  /* ----- score history line ----- */
+  var hist = d.history.slice(0, 15).reverse();
+  var svg = $("spark");
+  if (hist.length < 2) {
+    $("sparkNote").textContent = "Play at least two games to see the line.";
+    svg.innerHTML = "";
+  } else {
+    $("sparkNote").textContent = "Your last " + hist.length + " games, oldest on the left.";
+    var W = 600, H = 130, pad = 14;
+    var max = Math.max.apply(null, hist.map(function (h) { return h.score; }).concat([100]));
+    var pts = hist.map(function (h, i) {
+      var x = pad + i * (W - pad * 2) / (hist.length - 1);
+      var y = H - pad - (h.score / max) * (H - pad * 2);
+      return [x, y, h];
+    });
+    var line = pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join("");
+    var area = line + "L" + pts[pts.length - 1][0].toFixed(1) + " " + (H - pad) + "L" + pad + " " + (H - pad) + "Z";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.innerHTML =
+      '<path d="' + area + '" fill="rgba(47,111,228,.14)"/>' +
+      '<path d="' + line + '" fill="none" stroke="#2f6fe4" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+      pts.map(function (p) {
+        var g = EGStats.GAMES[p[2].game] || { emoji: "🎮", name: p[2].game };
+        return '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5" fill="#fff" stroke="#2f6fe4" stroke-width="3">' +
+               '<title>' + g.name + ": " + p[2].score + ' points</title></circle>';
+      }).join("");
+  }
+
+  /* ----- per game ----- */
+  $("gamestats").innerHTML = Object.keys(EGStats.GAMES).map(function (k) {
+    var g = EGStats.GAMES[k];
+    var s = d.games[k] || { plays: 0, best: 0, totalScore: 0, correct: 0, wrong: 0, timeMs: 0, lastPlayed: null };
+    var answered = s.correct + s.wrong;
+    var acc = answered ? Math.round(s.correct / answered * 100) : 0;
+    var avg = s.plays ? Math.round(s.totalScore / s.plays) : 0;
+    return '<div class="gamestat">' +
+      '<div class="ge">' + g.emoji + '</div>' +
+      '<div class="gname"><b>' + g.name + '</b><small>' +
+        (s.lastPlayed ? "Last played " + EGStats.fmtDate(s.lastPlayed) : "Not played yet") + '</small></div>' +
+      '<div class="gnum"><b>' + s.best + '</b><small>best</small></div>' +
+      '<div class="gnum"><b>' + avg + '</b><small>average</small></div>' +
+      '<div class="gnum"><b>' + s.plays + '</b><small>games</small></div>' +
+      '<div class="gnum"><b>' + acc + '%</b><small>correct</small></div>' +
+      '<div class="gnum"><b>' + EGStats.fmtTime(s.timeMs) + '</b><small>time</small></div>' +
+      '<a class="btn sm green" href="' + g.href + '">Play</a>' +
+      '</div>';
+  }).join("");
+
+  /* ----- badges ----- */
+  $("badges").innerHTML = EGStats.badges().map(function (b) {
+    return '<div class="badge' + (b.done ? " done" : "") + '">' +
+      '<div class="be">' + b.emoji + '</div><b>' + b.name + '</b><small>' + b.desc + '</small></div>';
+  }).join("");
+
+  /* ----- history table ----- */
+  if (!d.history.length) {
+    $("histWrap").innerHTML = '<div class="empty">No games yet. Go and play one! 🎮</div>';
+  } else {
+    $("histWrap").innerHTML = '<table class="hist"><thead><tr>' +
+      '<th>Game</th><th>Score</th><th>Correct</th><th>When</th></tr></thead><tbody>' +
+      d.history.slice(0, 12).map(function (h) {
+        var g = EGStats.GAMES[h.game] || { emoji: "🎮", name: h.game };
+        return '<tr><td><span class="tag">' + g.emoji + " " + g.name + '</span></td>' +
+          '<td class="score"><b>' + h.score + '</b></td>' +
+          '<td>' + h.correct + " / " + (h.questions || 10) + '</td>' +
+          '<td>' + EGStats.fmtDate(h.at) + '</td></tr>';
+      }).join("") + '</tbody></table>';
+  }
+}
+
+/* ---------- backup ---------- */
+$("exportBtn").addEventListener("click", function () {
+  var blob = new Blob([JSON.stringify(EGStats.all(), null, 2)], { type: "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "enes-gaming-progress-" + new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  $("backupMsg").textContent = "Saved to your downloads ✅";
+  $("backupMsg").className = "feedback good";
+});
+
+$("importBtn").addEventListener("click", function () { $("fileInput").click(); });
+
+$("fileInput").addEventListener("change", function (e) {
+  var f = e.target.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    var ok = EGStats.importJSON(reader.result);
+    $("backupMsg").textContent = ok ? "Backup loaded ✅" : "That file did not look right 😕";
+    $("backupMsg").className = "feedback " + (ok ? "good" : "bad");
+    if (ok) render();
+  };
+  reader.readAsText(f);
+  e.target.value = "";
+});
+
+$("resetBtn").addEventListener("click", function () {
+  if (!confirm("Delete all scores, play time and badges? This cannot be undone.")) return;
+  EGStats.reset();
+  render();
+  $("backupMsg").textContent = "Everything was reset.";
+  $("backupMsg").className = "feedback bad";
+});
+
+render();
+</script>
+</body>
+</html>

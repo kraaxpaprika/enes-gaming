@@ -11,35 +11,64 @@
 <div class="wrap">
   <div class="topbar"></div>
 
+  <div class="card" style="margin-bottom:18px">
+    <div class="mascot-row">
+      <img class="mascot" id="mascot" src="assets/img/mascot.svg" alt="Mascot">
+      <div class="speech" id="speech">Ready for today's adventure?</div>
+    </div>
+    <div class="tiles mt">
+      <div class="tile"><div class="v" id="t-time">0s</div><div class="k">Time played</div></div>
+      <div class="tile t2"><div class="v" id="t-plays">0</div><div class="k">Games finished</div></div>
+      <div class="tile t3"><div class="v" id="t-acc">0%</div><div class="k">Correct answers</div></div>
+      <div class="tile t4"><div class="v" id="t-streak">0</div><div class="k">Day streak 🔥</div></div>
+    </div>
+  </div>
+
   <div class="grid">
-    <a class="game-card" href="word-safari.html">
+    <a class="game-card c-word" href="word-safari.html">
       <div class="emoji">🦁</div>
       <h2>Word Safari</h2>
-      <p>See a picture, pick the right English word. Tap the speaker to hear it!</p>
+      <p>See a picture, pick the right English word — and hear how it sounds.</p>
       <span class="btn green">Play</span>
-      <div class="footer-note">Best score: <b id="best-word">0</b></div>
+      <div class="mini-stats">Best <b id="best-word">0</b> · Played <b id="plays-word">0</b>× · <b id="time-word">0s</b></div>
     </a>
 
-    <a class="game-card" href="flag-hunt.html">
+    <a class="game-card c-flag" href="flag-hunt.html">
       <div class="emoji">🚩</div>
       <h2>Flag Hunt</h2>
-      <p>Which country owns this flag? Learn countries and their capitals.</p>
+      <p>Whose flag is this? Learn countries, continents and capital cities.</p>
       <span class="btn green">Play</span>
-      <div class="footer-note">Best score: <b id="best-flag">0</b></div>
+      <div class="mini-stats">Best <b id="best-flag">0</b> · Played <b id="plays-flag">0</b>× · <b id="time-flag">0s</b></div>
     </a>
 
-    <a class="game-card" href="map-explorer.html">
+    <a class="game-card c-map" href="map-explorer.html">
       <div class="emoji">🌍</div>
       <h2>Map Explorer</h2>
       <p>Find the continent on the world map. Click the right piece of the planet!</p>
       <span class="btn green">Play</span>
-      <div class="footer-note">Best score: <b id="best-map">0</b></div>
+      <div class="mini-stats">Best <b id="best-map">0</b> · Played <b id="plays-map">0</b>× · <b id="time-map">0s</b></div>
+    </a>
+
+    <a class="game-card c-flag" href="turkey-provinces.html">
+      <div class="emoji"><img src="assets/img/flag-tr.svg" alt="" style="width:66px;border-radius:8px;box-shadow:var(--shadow-sm)"></div>
+      <h2>Türkiye Explorer</h2>
+      <p>All 81 provinces with their real borders — find them or name them.</p>
+      <span class="btn green">Play</span>
+      <div class="mini-stats">Best <b id="best-turkey">0</b> · Played <b id="plays-turkey">0</b>× · <b id="time-turkey">0s</b></div>
+    </a>
+
+    <a class="game-card c-stats" href="stats.html">
+      <div class="emoji">📊</div>
+      <h2>My Progress</h2>
+      <p>Scores, play time, badges and everything you have learned so far.</p>
+      <span class="btn yellow">Open</span>
+      <div class="mini-stats"><b id="badge-count">0</b> badges earned</div>
     </a>
 
     <div class="game-card soon">
       <div class="emoji">🔤</div>
       <h2>Spell It!</h2>
-      <p>Type the missing letters. Coming soon…</p>
+      <p>Type the missing letters of the word. Coming soon…</p>
       <span class="btn ghost">Soon</span>
     </div>
   </div>
@@ -48,13 +77,36 @@
 </div>
 
 <script src="assets/js/config.js"></script>
+<script src="assets/js/stats.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
-  EG.Auth.guard();
-  EG.buildTopbar("Hi " + EG.cfg.playerName + "! 👋", "Choose a game and start learning", null);
-  document.getElementById("best-word").textContent = EG.Scores.get("word");
-  document.getElementById("best-flag").textContent = EG.Scores.get("flag");
-  document.getElementById("best-map").textContent = EG.Scores.get("map");
+EG.Auth.guard();
+EG.buildTopbar("Hi " + EG.cfg.playerName + "! 👋", "Choose a game and start learning", null);
+
+var t = EGStats.totals();
+var d = EGStats.all();
+var $ = function (id) { return document.getElementById(id); };
+
+$("t-time").textContent = EGStats.fmtTime(t.timeMs);
+$("t-plays").textContent = t.plays;
+$("t-acc").textContent = t.accuracy + "%";
+$("t-streak").textContent = EGStats.streak();
+
+["word", "flag", "map", "turkey"].forEach(function (k) {
+  var g = d.games[k] || { best: 0, plays: 0, timeMs: 0 };
+  $("best-" + k).textContent = g.best;
+  $("plays-" + k).textContent = g.plays;
+  $("time-" + k).textContent = EGStats.fmtTime(g.timeMs);
+});
+
+$("badge-count").textContent = EGStats.badges().filter(function (b) { return b.done; }).length;
+
+// a friendly line from the mascot
+var msg = "Ready for today's adventure?";
+if (t.plays === 0) msg = "Hi! Pick a game and let's start! 🎮";
+else if (EGStats.streak() >= 3) msg = "Wow, " + EGStats.streak() + " days in a row! 🔥";
+else if (t.accuracy >= 80) msg = "You are getting really good — " + t.accuracy + "% correct!";
+$("speech").textContent = msg;
 </script>
 </body>
 </html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Türkiye Explorer — Enes Gaming</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"></div>
+
+  <div class="hud">
+    <span class="pill">⭐ Score: <b id="score">0</b></span>
+    <span class="pill">❓ <b id="qnum">1</b> / <b id="qtotal">10</b></span>
+    <span class="pill">🏆 Best: <b id="best">0</b></span>
+    <span class="pill">⏱️ <b id="clock">00:00</b></span>
+    <span class="bar"><i id="progress"></i></span>
+  </div>
+
+  <div class="card">
+    <div class="mascot-row" style="justify-content:flex-start">
+      <img class="mascot" id="mascot" src="assets/img/mascot.svg" alt="Mascot" style="width:86px">
+      <div class="speech" id="speech">Let's find the provinces of Türkiye!</div>
+    </div>
+
+    <div class="prompt mt">
+      <h2 id="question">Loading the map…</h2>
+      <p class="hint" id="hint">All 81 provinces, with their real borders.</p>
+    </div>
+
+    <div class="map-box provinces mt" id="mapBox">
+      <div class="map-loading" id="loading">🗺️ Loading the map of Türkiye…</div>
+      <svg id="map" role="img" aria-label="Map of the provinces of Türkiye"></svg>
+    </div>
+    <div class="map-credit">Province boundaries: tr-geojson</div>
+
+    <div class="options" id="options" hidden></div>
+    <div class="feedback" id="feedback"></div>
+
+    <div class="center mt" id="endBox" hidden>
+      <h2 id="endTitle"></h2>
+      <p id="endText"></p>
+      <button class="btn green" id="againBtn">Play again 🔁</button>
+      <a class="btn ghost" href="hub.html">Game hub</a>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/geo.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+EG.Auth.guard();
+EG.buildTopbar("Türkiye Explorer", "Find the 81 provinces on the map", "hub.html");
+EGStats.beginSession("turkey");
+EG.startTimer("clock");
+
+var TOTAL = 10;
+var round = 0, score = 0, target = null, mode = "find", locked = true, layers = null, provinces = [];
+var $ = function (id) { return document.getElementById(id); };
+
+EGGeo.load("assets/geo/turkey.json").then(function (data) {
+  provinces = data.features;
+  layers = EGGeo.render($("map"), provinces, {
+    projection: "equirect",
+    refLat: 39,             // Türkiye sits around 39°N - keeps the shape correct
+    width: 1000, height: 460, padding: 8,
+    className: "land",
+    title: function (f) { return f.n; }
+  });
+
+  layers.all.forEach(function (p) {
+    p.addEventListener("click", function () { onMapClick(p); });
+  });
+
+  $("loading").remove();
+  startGame();
+}).catch(function (e) {
+  $("loading").textContent = "Could not load the map data 😕";
+  $("question").textContent = "Map not available";
+  console.error(e);
+});
+
+function startGame() {
+  round = 0; score = 0;
+  $("score").textContent = "0";
+  $("best").textContent = EG.Scores.get("turkey");
+  $("qtotal").textContent = TOTAL;
+  $("endBox").hidden = true;
+  nextQuestion();
+}
+
+function clearMap() {
+  layers.all.forEach(function (p) { p.classList.remove("correct", "wrong", "target"); });
+  $("mapBox").classList.remove("locked");
+}
+
+function nextQuestion() {
+  if (round >= TOTAL) return endGame();
+  round++;
+  locked = false;
+  clearMap();
+  $("qnum").textContent = round;
+  $("progress").style.width = ((round - 1) / TOTAL * 100) + "%";
+  $("feedback").textContent = "";
+  $("feedback").className = "feedback";
+
+  target = EG.shuffle(provinces)[0].n;
+  // odd rounds: find it on the map | even rounds: a province is highlighted, name it
+  mode = (round % 2 === 1) ? "find" : "name";
+
+  if (mode === "find") {
+    $("options").hidden = true;
+    $("question").textContent = "Where is " + target + "?";
+    $("hint").textContent = "Click the province on the map.";
+    EG.react("idle", "Click the map!");
+  } else {
+    $("question").textContent = "Which province is highlighted?";
+    $("hint").textContent = "Look at the yellow area, then pick its name.";
+    (layers.byName[target] || []).forEach(function (p) { p.classList.add("target"); });
+    $("mapBox").classList.add("locked");
+
+    var wrong = EG.shuffle(provinces.filter(function (p) { return p.n !== target; })).slice(0, 3);
+    var choices = EG.shuffle([target].concat(wrong.map(function (p) { return p.n; })));
+    var box = $("options");
+    box.innerHTML = "";
+    box.hidden = false;
+    choices.forEach(function (nm) {
+      var b = document.createElement("button");
+      b.className = "opt";
+      b.textContent = nm;
+      b.addEventListener("click", function () { onOption(nm, b); });
+      box.appendChild(b);
+    });
+    EG.react("idle", "Which one is it?");
+  }
+  EG.speak(mode === "find" ? "Where is " + target + "?" : "Which province is highlighted?");
+}
+
+function reveal(isRight, message) {
+  locked = true;
+  $("mapBox").classList.add("locked");
+  (layers.byName[target] || []).forEach(function (p) { p.classList.remove("target"); p.classList.add("correct"); });
+
+  if (isRight) {
+    score += 10;
+    $("score").textContent = score;
+    $("feedback").className = "feedback good";
+    EG.Sound.good();
+    EG.react("good");
+  } else {
+    $("feedback").className = "feedback bad";
+    EG.Sound.bad();
+    EG.react("bad");
+  }
+  $("feedback").textContent = message;
+  EGStats.answer(isRight);
+  setTimeout(nextQuestion, 2200);
+}
+
+function onMapClick(path) {
+  if (locked || mode !== "find") return;
+  var picked = path.dataset.name;
+  if (picked === target) {
+    reveal(true, "Correct! That is " + target + ". 🎉");
+  } else {
+    path.classList.add("wrong");
+    reveal(false, "That was " + picked + ". " + target + " is the green one.");
+  }
+}
+
+function onOption(picked, btn) {
+  if (locked) return;
+  document.querySelectorAll(".opt").forEach(function (b) {
+    b.disabled = true;
+    if (b.textContent === target) b.classList.add("correct");
+  });
+  if (picked === target) {
+    reveal(true, "Correct! That is " + target + ". 🎉");
+  } else {
+    btn.classList.add("wrong");
+    reveal(false, "Not this time — it is " + target + ".");
+  }
+}
+
+function endGame() {
+  $("progress").style.width = "100%";
+  locked = true;
+  clearMap();
+  $("mapBox").classList.add("locked");
+  $("options").hidden = true;
+  $("question").textContent = "Game over!";
+  $("hint").textContent = "";
+  $("feedback").textContent = "";
+
+  var isBest = EGStats.finishRound("turkey", score, TOTAL);
+  $("endBox").hidden = false;
+  $("endTitle").textContent = "You scored " + score + " points!";
+  $("endText").textContent = isBest ? "That is a new best score! 🌟" : "Your best so far is " + EG.Scores.get("turkey") + ".";
+  $("best").textContent = EG.Scores.get("turkey");
+  EG.Sound.win();
+  EG.react("good", isBest ? "New record! 🏆" : "Good game!");
+  if (score >= TOTAL * 7) EG.confetti();
+}
+
+$("againBtn").addEventListener("click", startGame);
+</script>
+</body>
+</html>

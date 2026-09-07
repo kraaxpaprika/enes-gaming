@@ -15,19 +15,26 @@
     <span class="pill">⭐ Score: <b id="score">0</b></span>
     <span class="pill">❓ <b id="qnum">1</b> / <b id="qtotal">10</b></span>
     <span class="pill">🏆 Best: <b id="best">0</b></span>
+    <span class="pill">⏱️ <b id="clock">00:00</b></span>
     <span class="bar"><i id="progress"></i></span>
   </div>
 
   <div class="card">
-    <div class="prompt">
+    <div class="mascot-row" style="justify-content:flex-start">
+      <img class="mascot" id="mascot" src="assets/img/mascot.svg" alt="Mascot" style="width:86px">
+      <div class="speech" id="speech">Let's learn some words!</div>
+    </div>
+
+    <div class="prompt mt">
       <div class="big-emoji" id="emoji">🦁</div>
       <h2 id="question">What is this in English?</h2>
       <p class="hint" id="topic"></p>
-      <button class="btn ghost mt" id="sayBtn" hidden>🔊 Say it again</button>
+      <button class="btn ghost sm mt" id="sayBtn">🔊 Say it again</button>
     </div>
 
     <div class="options" id="options"></div>
     <div class="feedback" id="feedback"></div>
+
     <div class="center mt" id="endBox" hidden>
       <h2 id="endTitle"></h2>
       <p id="endText"></p>
@@ -39,14 +46,16 @@
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/data.js"></script>
+<script src="assets/js/stats.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
 EG.Auth.guard();
 EG.buildTopbar("Word Safari 🦁", "Match the picture with the English word", "hub.html");
+EGStats.beginSession("word");
+EG.startTimer("clock");
 
 var TOTAL = 10;
 var round = 0, score = 0, current = null;
-
 var $ = function (id) { return document.getElementById(id); };
 
 function startGame() {
@@ -67,9 +76,11 @@ function nextQuestion() {
   $("progress").style.width = ((round - 1) / TOTAL * 100) + "%";
   $("feedback").textContent = "";
   $("feedback").className = "feedback";
+  $("question").textContent = "What is this in English?";
 
   current = EG.shuffle(WORDS)[0];
   $("emoji").textContent = current.emoji;
+  $("emoji").style.animation = "none"; void $("emoji").offsetWidth; $("emoji").style.animation = "";
   $("topic").textContent = "Topic: " + current.topic;
 
   var wrong = EG.pickSome(WORDS.filter(function (w) { return w.word !== current.word; }), 3);
@@ -84,29 +95,33 @@ function nextQuestion() {
     b.addEventListener("click", function () { answer(c, b); });
     box.appendChild(b);
   });
+  EG.react("idle");
 }
 
 function answer(choice, btn) {
-  var buttons = document.querySelectorAll(".opt");
-  buttons.forEach(function (b) {
+  document.querySelectorAll(".opt").forEach(function (b) {
     b.disabled = true;
     if (b.textContent === current.word) b.classList.add("correct");
   });
 
-  if (choice.word === current.word) {
+  var isRight = choice.word === current.word;
+  if (isRight) {
     score += 10;
     $("score").textContent = score;
     $("feedback").textContent = "Great job! " + current.emoji + " = " + current.word;
     $("feedback").className = "feedback good";
     EG.Sound.good();
+    EG.react("good");
   } else {
     btn.classList.add("wrong");
     $("feedback").textContent = "Not quite — it is “" + current.word + "”.";
     $("feedback").className = "feedback bad";
     EG.Sound.bad();
+    EG.react("bad");
   }
+  EGStats.answer(isRight);
   EG.speak(current.word);
-  setTimeout(nextQuestion, 1600);
+  setTimeout(nextQuestion, 1700);
 }
 
 function endGame() {
@@ -118,12 +133,14 @@ function endGame() {
   $("topic").textContent = "";
   $("feedback").textContent = "";
 
-  var isBest = EG.Scores.save("word", score);
+  var isBest = EGStats.finishRound("word", score, TOTAL);
   $("endBox").hidden = false;
   $("endTitle").textContent = "You scored " + score + " points!";
   $("endText").textContent = isBest ? "That is a new best score! 🌟" : "Your best so far is " + EG.Scores.get("word") + ".";
   $("best").textContent = EG.Scores.get("word");
   EG.Sound.win();
+  EG.react("good", isBest ? "New record! 🏆" : "Good game!");
+  if (score >= TOTAL * 7) EG.confetti();
 }
 
 $("sayBtn").addEventListener("click", function () { if (current) EG.speak(current.word); });

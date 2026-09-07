@@ -11,13 +11,29 @@
 
 <div class="login-wrap">
   <form class="login-card" id="loginForm" autocomplete="off">
-    <img class="avatar" id="avatarImg" src="" alt="Player">
+    <img class="mascot lg" id="mascot" src="assets/img/mascot.svg" alt="Mascot">
     <h1>Enes Gaming</h1>
-    <p>Learn English &amp; explore the world!</p>
+    <p class="sub">Learn English &amp; explore the world 🌍</p>
 
-    <input type="password" id="pw" placeholder="Password" aria-label="Password" autofocus>
+    <input type="password" id="pw" inputmode="numeric" maxlength="8"
+           placeholder="••••" aria-label="Password" autofocus>
+
+    <div class="keypad" id="keypad">
+      <button type="button" data-k="1">1</button>
+      <button type="button" data-k="2">2</button>
+      <button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button>
+      <button type="button" data-k="5">5</button>
+      <button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button>
+      <button type="button" data-k="8">8</button>
+      <button type="button" data-k="9">9</button>
+      <button type="button" class="wide" data-k="clear">Clear</button>
+      <button type="button" data-k="0">0</button>
+      <button type="button" class="wide" data-k="del">⌫</button>
+    </div>
+
     <button class="btn red" type="submit" style="width:100%">Let's play! 🎮</button>
-
     <div class="error" id="err"></div>
   </form>
 </div>
@@ -25,32 +41,37 @@
 <script src="assets/js/config.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
-  // avatar with emoji fallback
-  var img = document.getElementById("avatarImg");
-  img.src = EG.cfg.avatar || "";
-  img.onerror = function () {
-    var d = document.createElement("div");
-    d.className = "avatar";
-    d.textContent = EG.cfg.avatarFallback || "🙂";
-    img.replaceWith(d);
-  };
+  var pw = document.getElementById("pw");
+  var err = document.getElementById("err");
+  var mascot = document.getElementById("mascot");
 
-  // already logged in? go straight in
   if (EG.Auth.isLoggedIn()) location.replace("hub.html");
+
+  document.getElementById("keypad").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    var k = b.dataset.k;
+    if (k === "clear") pw.value = "";
+    else if (k === "del") pw.value = pw.value.slice(0, -1);
+    else if (pw.value.length < 8) pw.value += k;
+    EG.Sound.init();
+    err.textContent = "";
+    pw.focus();
+  });
 
   document.getElementById("loginForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    var pw = document.getElementById("pw").value;
-    var err = document.getElementById("err");
-    if (EG.Auth.check(pw)) {
+    if (EG.Auth.check(pw.value)) {
       EG.Sound.good();
+      mascot.classList.add("cheer");
       EG.Auth.login();
-      location.href = "hub.html";
+      setTimeout(function () { location.href = "hub.html"; }, 380);
     } else {
-      err.textContent = "Oops! Wrong password. Try again 🔑";
+      err.textContent = "Oops! Wrong password 🔑";
       EG.Sound.bad();
-      document.getElementById("pw").value = "";
-      document.getElementById("pw").focus();
+      mascot.classList.remove("sad"); void mascot.offsetWidth; mascot.classList.add("sad");
+      pw.value = "";
+      pw.focus();
     }
   });
 </script>

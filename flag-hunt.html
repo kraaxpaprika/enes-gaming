@@ -15,11 +15,17 @@
     <span class="pill">⭐ Score: <b id="score">0</b></span>
     <span class="pill">❓ <b id="qnum">1</b> / <b id="qtotal">10</b></span>
     <span class="pill">🏆 Best: <b id="best">0</b></span>
+    <span class="pill">⏱️ <b id="clock">00:00</b></span>
     <span class="bar"><i id="progress"></i></span>
   </div>
 
   <div class="card">
-    <div class="prompt">
+    <div class="mascot-row" style="justify-content:flex-start">
+      <img class="mascot" id="mascot" src="assets/img/mascot.svg" alt="Mascot" style="width:86px">
+      <div class="speech" id="speech">Do you know this flag?</div>
+    </div>
+
+    <div class="prompt mt">
       <img class="flag-img" id="flag" src="" alt="Flag">
       <h2 id="question">Which country is this?</h2>
       <p class="hint" id="hint"></p>
@@ -27,6 +33,7 @@
 
     <div class="options" id="options"></div>
     <div class="feedback" id="feedback"></div>
+
     <div class="center mt" id="endBox" hidden>
       <h2 id="endTitle"></h2>
       <p id="endText"></p>
@@ -38,10 +45,13 @@
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/data.js"></script>
+<script src="assets/js/stats.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
 EG.Auth.guard();
 EG.buildTopbar("Flag Hunt 🚩", "Flags, countries and capital cities", "hub.html");
+EGStats.beginSession("flag");
+EG.startTimer("clock");
 
 var TOTAL = 10;
 var round = 0, score = 0, current = null, mode = "flag";
@@ -67,13 +77,12 @@ function nextQuestion() {
   $("feedback").className = "feedback";
 
   current = EG.shuffle(COUNTRIES)[0];
-  // every third question asks for the capital instead of the country
   mode = (round % 3 === 0) ? "capital" : "flag";
 
   $("flag").src = "https://flagcdn.com/w320/" + current.code + ".png";
   $("flag").alt = "Flag of " + current.name;
 
-  var wrong, choices, label;
+  var label;
   if (mode === "flag") {
     $("question").textContent = "Which country is this flag from?";
     $("hint").textContent = "Continent: " + current.continent;
@@ -84,8 +93,8 @@ function nextQuestion() {
     label = function (c) { return c.capital; };
   }
 
-  wrong = EG.pickSome(COUNTRIES.filter(function (c) { return c.code !== current.code; }), 3);
-  choices = EG.shuffle([current].concat(wrong));
+  var wrong = EG.pickSome(COUNTRIES.filter(function (c) { return c.code !== current.code; }), 3);
+  var choices = EG.shuffle([current].concat(wrong));
 
   var box = $("options");
   box.innerHTML = "";
@@ -97,6 +106,7 @@ function nextQuestion() {
     b.addEventListener("click", function () { answer(c, b, label); });
     box.appendChild(b);
   });
+  EG.react("idle");
 }
 
 function answer(choice, btn, label) {
@@ -105,18 +115,22 @@ function answer(choice, btn, label) {
     if (b.dataset.code === current.code) b.classList.add("correct");
   });
 
-  if (choice.code === current.code) {
+  var isRight = choice.code === current.code;
+  if (isRight) {
     score += 10;
     $("score").textContent = score;
     $("feedback").textContent = "Correct! " + current.name + " — capital: " + current.capital;
     $("feedback").className = "feedback good";
     EG.Sound.good();
+    EG.react("good");
   } else {
     btn.classList.add("wrong");
     $("feedback").textContent = "The answer is " + label(current) + " (" + current.name + ").";
     $("feedback").className = "feedback bad";
     EG.Sound.bad();
+    EG.react("bad");
   }
+  EGStats.answer(isRight);
   EG.speak(mode === "capital" ? current.capital : current.name);
   setTimeout(nextQuestion, 2000);
 }
@@ -129,12 +143,14 @@ function endGame() {
   $("hint").textContent = "";
   $("feedback").textContent = "";
 
-  var isBest = EG.Scores.save("flag", score);
+  var isBest = EGStats.finishRound("flag", score, TOTAL);
   $("endBox").hidden = false;
   $("endTitle").textContent = "You scored " + score + " points!";
   $("endText").textContent = isBest ? "That is a new best score! 🌟" : "Your best so far is " + EG.Scores.get("flag") + ".";
   $("best").textContent = EG.Scores.get("flag");
   EG.Sound.win();
+  EG.react("good", isBest ? "New record! 🏆" : "Good game!");
+  if (score >= TOTAL * 7) EG.confetti();
 }
 
 $("againBtn").addEventListener("click", startGame);
