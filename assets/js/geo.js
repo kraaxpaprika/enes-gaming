@@ -117,6 +117,131 @@
     return out;
   }
 
+  /* ------------------------------------------------------------------
+     Pinch / drag / wheel zooming for a rendered map.
+     Works by moving the SVG viewBox, so the paths stay crisp.
+     A drag never counts as a click on a country.
+     ------------------------------------------------------------------ */
+  function enablePanZoom(svg, opts) {
+    opts = opts || {};
+    var vb = svg.getAttribute("viewBox").split(/[\s,]+/).map(Number);
+    var home = { x: vb[0], y: vb[1], w: vb[2], h: vb[3] };
+    var view = { x: home.x, y: home.y, w: home.w, h: home.h };
+    var MIN_W = home.w / (opts.maxZoom || 12);
+
+    function apply() {
+      svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
+    }
+
+    /* screen pixels -> viewBox units */
+    function toView(clientX, clientY) {
+      var r = svg.getBoundingClientRect();
+      return {
+        x: view.x + (clientX - r.left) / r.width * view.w,
+        y: view.y + (clientY - r.top) / r.height * view.h
+      };
+    }
+
+    function zoomAt(factor, cx, cy) {
+      var p = toView(cx, cy);
+      var nw = Math.min(home.w, Math.max(MIN_W, view.w * factor));
+      var k = nw / view.w;
+      view.x = p.x - (p.x - view.x) * k;
+      view.y = p.y - (p.y - view.y) * k;
+      view.w = nw;
+      view.h = view.h * k;
+      clamp();
+      apply();
+    }
+
+    function clamp() {
+      view.x = Math.max(home.x, Math.min(home.x + home.w - view.w, view.x));
+      view.y = Math.max(home.y, Math.min(home.y + home.h - view.h, view.y));
+    }
+
+    var pointers = {}, dragged = false, last = null, pinchStart = null;
+
+    svg.addEventListener("pointerdown", function (e) {
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      svg.setPointerCapture(e.pointerId);
+      if (Object.keys(pointers).length === 1) { last = { x: e.clientX, y: e.clientY }; dragged = false; }
+      else { pinchStart = null; }
+    });
+
+    svg.addEventListener("pointermove", function (e) {
+      if (!pointers[e.pointerId]) return;
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var ids = Object.keys(pointers);
+
+      if (ids.length >= 2) {
+        // pinch
+        var a = pointers[ids[0]], b = pointers[ids[1]];
+        var dist = Math.hypot(a.x - b.x, a.y - b.y);
+        var mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        if (pinchStart) { zoomAt(pinchStart / dist, mid.x, mid.y); dragged = true; }
+        pinchStart = dist;
+        e.preventDefault();
+        return;
+      }
+
+      if (!last) return;
+      var dx = e.clientX - last.x, dy = e.clientY - last.y;
+      if (Math.abs(dx) + Math.abs(dy) > 5) dragged = true;
+      if (!dragged) return;
+      var r = svg.getBoundingClientRect();
+      view.x -= dx / r.width * view.w;
+      view.y -= dy / r.height * view.h;
+      clamp(); apply();
+      last = { x: e.clientX, y: e.clientY };
+      e.preventDefault();
+    });
+
+    function up(e) {
+      delete pointers[e.pointerId];
+      if (!Object.keys(pointers).length) { last = null; pinchStart = null; }
+    }
+    svg.addEventListener("pointerup", up);
+    svg.addEventListener("pointercancel", up);
+
+    // a drag must not select a country
+    svg.addEventListener("click", function (e) {
+      if (dragged) { e.stopPropagation(); e.preventDefault(); dragged = false; }
+    }, true);
+
+    svg.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      zoomAt(e.deltaY > 0 ? 1.18 : 0.85, e.clientX, e.clientY);
+    }, { passive: false });
+
+    var api = {
+      zoomIn: function () { var r = svg.getBoundingClientRect(); zoomAt(0.7, r.left + r.width / 2, r.top + r.height / 2); },
+      zoomOut: function () { var r = svg.getBoundingClientRect(); zoomAt(1.4, r.left + r.width / 2, r.top + r.height / 2); },
+      reset: function () { view = { x: home.x, y: home.y, w: home.w, h: home.h }; apply(); },
+      /* bring one path fully into view (used to show the answer) */
+      focus: function (paths, pad) {
+        if (!paths || !paths.length) return;
+        var b = null;
+        paths.forEach(function (p) {
+          var bb = p.getBBox();
+          if (!b) b = { x1: bb.x, y1: bb.y, x2: bb.x + bb.width, y2: bb.y + bb.height };
+          else {
+            b.x1 = Math.min(b.x1, bb.x); b.y1 = Math.min(b.y1, bb.y);
+            b.x2 = Math.max(b.x2, bb.x + bb.width); b.y2 = Math.max(b.y2, bb.y + bb.height);
+          }
+        });
+        var m = pad == null ? 1.8 : pad;
+        var w = Math.min(home.w, (b.x2 - b.x1) * m), h = Math.min(home.h, (b.y2 - b.y1) * m);
+        var ratio = home.w / home.h;
+        if (w / h > ratio) h = w / ratio; else w = h * ratio;
+        view.w = Math.max(MIN_W, w); view.h = view.w / ratio;
+        view.x = (b.x1 + b.x2) / 2 - view.w / 2;
+        view.y = (b.y1 + b.y2) / 2 - view.h / 2;
+        clamp(); apply();
+      }
+    };
+    return api;
+  }
+
   function load(url) {
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error("Could not load " + url);
@@ -124,5 +249,5 @@
     });
   }
 
-  window.EGGeo = { load: load, render: render, projections: projections };
+  window.EGGeo = { load: load, render: render, enablePanZoom: enablePanZoom, projections: projections };
 })();

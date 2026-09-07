@@ -326,6 +326,24 @@ h1, h2, h3 { letter-spacing: .2px; }
 
 .map-credit { font-size: 11px; color: var(--muted); text-align: right; padding: 4px 8px 0; }
 
+/* zoom buttons that sit on top of the map */
+.map-tools { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+
+.map-tools button {
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  border: none;
+  background: rgba(255, 255, 255, .95);
+  box-shadow: var(--shadow-sm);
+  font-size: 22px; font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.map-tools button:active { transform: translateY(2px); }
+.map-hint { font-size: 12px; color: var(--muted); text-align: center; padding: 6px 8px 0; }
+
 /* ---------- stats page ---------- */
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
 
@@ -402,9 +420,53 @@ h1, h2, h3 { letter-spacing: .2px; }
 .footer-note { text-align: center; color: var(--muted); font-size: 13px; margin-top: 26px; }
 .empty { text-align: center; color: var(--muted); padding: 22px 0; }
 
-@media (max-width: 560px) {
+/* ---------- phones ---------- */
+@media (max-width: 620px) {
+  .wrap { width: 96vw; padding-bottom: 40px; }
+
+  /* header: keep it on one short line */
+  .topbar { gap: 10px; padding: 10px 12px; border-radius: 18px; }
+  .topbar h1 { font-size: 16px; }
+  .topbar h1 small { display: none; }
+  .topbar .avatar { width: 42px; height: 42px; }
+  .topbar .btn { padding: 9px 12px; font-size: 13px; }
+
+  .card { padding: 16px; border-radius: 18px; }
+  .card h3 { font-size: 17px; }
+
+  .tiles { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .tile { padding: 12px 8px; }
+  .tile .v { font-size: 22px; }
+  .tile .k { font-size: 11px; }
+
+  .pill { font-size: 13px; padding: 7px 12px; }
+  .hud { gap: 8px; }
+
   .prompt .big-emoji { font-size: 74px; }
-  .opt { font-size: 18px; padding: 16px 8px; }
-  .topbar h1 { font-size: 17px; }
-  .mascot { width: 100px; }
+  .prompt h2 { font-size: 21px; }
+  .options { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opt { font-size: 16px; padding: 15px 6px; }
+
+  .mascot { width: 74px; }
+  .speech { font-size: 15px; padding: 10px 12px; max-width: none; flex: 1; }
+
+  .game-card p { min-height: 0; }
+  .game-card .emoji { font-size: 46px; }
+
+  /* one row of numbers per game is too wide on a phone - wrap it */
+  .gamestat { flex-wrap: wrap; }
+  .gamestat .gname { flex: 1 0 100%; }
+  .gamestat .gnum { min-width: 56px; }
+
+  .chart { height: 140px; gap: 6px; }
+  .chart .col span.val { font-size: 10px; }
+
+  .hist { font-size: 13px; }
+  .hist td, .hist th { padding: 7px 4px; }
+}
+
+/* very narrow phones */
+@media (max-width: 380px) {
+  .options { grid-template-columns: 1fr; }
+  .topbar h1 { font-size: 15px; }
 }

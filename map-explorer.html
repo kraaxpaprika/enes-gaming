@@ -33,7 +33,13 @@
     <div class="map-box mt" id="mapBox">
       <div class="map-loading" id="loading">🌍 Loading the world map…</div>
       <svg id="map" role="img" aria-label="World map"></svg>
+      <div class="map-tools">
+        <button type="button" id="zoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+        <button type="button" id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
+        <button type="button" id="zoomReset" title="Whole map" aria-label="Show the whole map">⤢</button>
+      </div>
     </div>
+    <div class="map-hint">Pinch or use + / − to zoom, drag to move around.</div>
     <div class="map-credit">Boundaries: Natural Earth (public domain)</div>
 
     <div class="feedback" id="feedback"></div>
@@ -59,7 +65,7 @@ EGStats.beginSession("map");
 var stopClock = EG.startTimer("clock");
 
 var TOTAL = 10;
-var round = 0, score = 0, target = null, country = null, locked = true, layers = null, worldFeatures = [];
+var round = 0, score = 0, target = null, country = null, locked = true, layers = null, worldFeatures = [], zoom = null;
 var $ = function (id) { return document.getElementById(id); };
 
 /* Natural Earth calls it "Turkey"; we show the official name. */
@@ -79,6 +85,11 @@ EGGeo.load("assets/geo/world.json").then(function (data) {
   layers.all.forEach(function (p) {
     p.addEventListener("click", function () { onPick(p); });
   });
+
+  zoom = EGGeo.enablePanZoom($("map"), { maxZoom: 10 });
+  $("zoomIn").addEventListener("click", zoom.zoomIn);
+  $("zoomOut").addEventListener("click", zoom.zoomOut);
+  $("zoomReset").addEventListener("click", zoom.reset);
 
   $("loading").remove();
   startGame();
@@ -107,6 +118,7 @@ function nextQuestion() {
   round++;
   locked = false;
   clearMap();
+  if (zoom) zoom.reset();
   $("qnum").textContent = round;
   $("progress").style.width = ((round - 1) / TOTAL * 100) + "%";
   $("feedback").textContent = "";
