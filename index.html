@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enes Gaming — Log in</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div class="login-wrap">
+  <form class="login-card" id="loginForm" autocomplete="off">
+    <img class="avatar" id="avatarImg" src="" alt="Player">
+    <h1>Enes Gaming</h1>
+    <p>Learn English &amp; explore the world!</p>
+
+    <input type="password" id="pw" placeholder="Password" aria-label="Password" autofocus>
+    <button class="btn red" type="submit" style="width:100%">Let's play! 🎮</button>
+
+    <div class="error" id="err"></div>
+  </form>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  // avatar with emoji fallback
+  var img = document.getElementById("avatarImg");
+  img.src = EG.cfg.avatar || "";
+  img.onerror = function () {
+    var d = document.createElement("div");
+    d.className = "avatar";
+    d.textContent = EG.cfg.avatarFallback || "🙂";
+    img.replaceWith(d);
+  };
+
+  // already logged in? go straight in
+  if (EG.Auth.isLoggedIn()) location.replace("hub.html");
+
+  document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var pw = document.getElementById("pw").value;
+    var err = document.getElementById("err");
+    if (EG.Auth.check(pw)) {
+      EG.Sound.good();
+      EG.Auth.login();
+      location.href = "hub.html";
+    } else {
+      err.textContent = "Oops! Wrong password. Try again 🔑";
+      EG.Sound.bad();
+      document.getElementById("pw").value = "";
+      document.getElementById("pw").focus();
+    }
+  });
+</script>
+</body>
+</html>

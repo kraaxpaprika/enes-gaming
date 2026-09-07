@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Safari — Enes Gaming</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦁</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"></div>
+
+  <div class="hud">
+    <span class="pill">⭐ Score: <b id="score">0</b></span>
+    <span class="pill">❓ <b id="qnum">1</b> / <b id="qtotal">10</b></span>
+    <span class="pill">🏆 Best: <b id="best">0</b></span>
+    <span class="bar"><i id="progress"></i></span>
+  </div>
+
+  <div class="card">
+    <div class="prompt">
+      <div class="big-emoji" id="emoji">🦁</div>
+      <h2 id="question">What is this in English?</h2>
+      <p class="hint" id="topic"></p>
+      <button class="btn ghost mt" id="sayBtn" hidden>🔊 Say it again</button>
+    </div>
+
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="center mt" id="endBox" hidden>
+      <h2 id="endTitle"></h2>
+      <p id="endText"></p>
+      <button class="btn green" id="againBtn">Play again 🔁</button>
+      <a class="btn ghost" href="hub.html">Game hub</a>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+EG.Auth.guard();
+EG.buildTopbar("Word Safari 🦁", "Match the picture with the English word", "hub.html");
+
+var TOTAL = 10;
+var round = 0, score = 0, current = null;
+
+var $ = function (id) { return document.getElementById(id); };
+
+function startGame() {
+  round = 0; score = 0;
+  $("score").textContent = "0";
+  $("best").textContent = EG.Scores.get("word");
+  $("qtotal").textContent = TOTAL;
+  $("endBox").hidden = true;
+  $("options").hidden = false;
+  $("sayBtn").hidden = false;
+  nextQuestion();
+}
+
+function nextQuestion() {
+  if (round >= TOTAL) return endGame();
+  round++;
+  $("qnum").textContent = round;
+  $("progress").style.width = ((round - 1) / TOTAL * 100) + "%";
+  $("feedback").textContent = "";
+  $("feedback").className = "feedback";
+
+  current = EG.shuffle(WORDS)[0];
+  $("emoji").textContent = current.emoji;
+  $("topic").textContent = "Topic: " + current.topic;
+
+  var wrong = EG.pickSome(WORDS.filter(function (w) { return w.word !== current.word; }), 3);
+  var choices = EG.shuffle([current].concat(wrong));
+
+  var box = $("options");
+  box.innerHTML = "";
+  choices.forEach(function (c) {
+    var b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = c.word;
+    b.addEventListener("click", function () { answer(c, b); });
+    box.appendChild(b);
+  });
+}
+
+function answer(choice, btn) {
+  var buttons = document.querySelectorAll(".opt");
+  buttons.forEach(function (b) {
+    b.disabled = true;
+    if (b.textContent === current.word) b.classList.add("correct");
+  });
+
+  if (choice.word === current.word) {
+    score += 10;
+    $("score").textContent = score;
+    $("feedback").textContent = "Great job! " + current.emoji + " = " + current.word;
+    $("feedback").className = "feedback good";
+    EG.Sound.good();
+  } else {
+    btn.classList.add("wrong");
+    $("feedback").textContent = "Not quite — it is “" + current.word + "”.";
+    $("feedback").className = "feedback bad";
+    EG.Sound.bad();
+  }
+  EG.speak(current.word);
+  setTimeout(nextQuestion, 1600);
+}
+
+function endGame() {
+  $("progress").style.width = "100%";
+  $("options").hidden = true;
+  $("sayBtn").hidden = true;
+  $("emoji").textContent = score >= TOTAL * 8 ? "🏆" : score >= TOTAL * 5 ? "🎉" : "💪";
+  $("question").textContent = "Game over!";
+  $("topic").textContent = "";
+  $("feedback").textContent = "";
+
+  var isBest = EG.Scores.save("word", score);
+  $("endBox").hidden = false;
+  $("endTitle").textContent = "You scored " + score + " points!";
+  $("endText").textContent = isBest ? "That is a new best score! 🌟" : "Your best so far is " + EG.Scores.get("word") + ".";
+  $("best").textContent = EG.Scores.get("word");
+  EG.Sound.win();
+}
+
+$("sayBtn").addEventListener("click", function () { if (current) EG.speak(current.word); });
+$("againBtn").addEventListener("click", startGame);
+startGame();
+</script>
+</body>
+</html>
