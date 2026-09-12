@@ -1,4 +1,4 @@
-# Enes Gaming 🎮
+# Enes & Fatih Mert Gaming 🎮
 
 A password-protected learning site for a 7-year-old: English vocabulary and world geography.
 Pure static HTML/CSS/JS — no build step, no framework, no server.
@@ -31,7 +31,7 @@ localStorage** (key `eg_stats_v1`), on that device only:
 ```jsonc
 {
   "v": 1,                       // schema version, used by migrate() in stats.js
-  "player": "Enes",
+  "player": "Enes & Fatih Mert",
   "games": {                    // one row per game
     "word": { "plays": 4, "best": 90, "totalScore": 250,
               "correct": 31, "wrong": 9, "timeMs": 412000,
@@ -103,7 +103,7 @@ the map data is fetched with `fetch()`.)
 ## Publish on GitHub Pages
 
 ```bash
-gh repo create enes-gaming --private --source . --push
+gh repo create enes-fatih-mert-gaming --private --source . --push
 ```
 
 Then repo → **Settings → Pages** → Deploy from a branch → `main` → `/ (root)`.

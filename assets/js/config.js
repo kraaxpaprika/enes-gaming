@@ -3,7 +3,7 @@
    ------------------------------------------------------------------ */
 window.GAME_CONFIG = {
   // Player name shown all over the site.
-  playerName: "Enes",
+  playerName: "Enes & Fatih Mert",
 
   // Login password. Base64 so it is not readable at a glance.
   // Current password: 1031
