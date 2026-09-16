@@ -4,6 +4,35 @@
 (function () {
   var CFG = window.GAME_CONFIG || {};
   var SESSION_KEY = "eg_logged_in";
+  var PLAYER_KEY = "eg_player";
+
+  /* ---------- who is playing ---------- */
+  var Players = {
+    list: function () {
+      var l = CFG.players;
+      if (!l || !l.length) l = [{ id: "player", name: CFG.playerName || "Player", emoji: "🎮" }];
+      return l;
+    },
+    byId: function (id) {
+      var found = null;
+      Players.list().forEach(function (p) { if (p.id === id) found = p; });
+      return found;
+    },
+    /* the player chosen on this device, or null */
+    current: function () {
+      var id = "";
+      try { id = localStorage.getItem(PLAYER_KEY) || ""; } catch (e) { id = ""; }
+      return Players.byId(id);
+    },
+    currentId: function () { var p = Players.current(); return p ? p.id : ""; },
+    select: function (id) {
+      if (!Players.byId(id)) return false;
+      try { localStorage.setItem(PLAYER_KEY, id); } catch (e) { /* blocked */ }
+      if (window.EGStats) EGStats.usePlayer(id);
+      return true;
+    },
+    clear: function () { try { localStorage.removeItem(PLAYER_KEY); } catch (e) {} }
+  };
 
   /* ---------- login ---------- */
   var Auth = {
@@ -13,9 +42,16 @@
       return String(typed).trim().toLowerCase() === expected.toLowerCase();
     },
     login: function () { sessionStorage.setItem(SESSION_KEY, "yes"); },
-    logout: function () { sessionStorage.removeItem(SESSION_KEY); location.href = "index.html"; },
+    logout: function () {
+      sessionStorage.removeItem(SESSION_KEY);
+      Players.clear();
+      location.href = "index.html";
+    },
     isLoggedIn: function () { return sessionStorage.getItem(SESSION_KEY) === "yes"; },
-    guard: function () { if (!Auth.isLoggedIn()) location.replace("index.html"); }
+    guard: function () {
+      if (!Auth.isLoggedIn() || !Players.current()) { location.replace("index.html"); return; }
+      if (window.EGStats) EGStats.usePlayer(Players.currentId());
+    }
   };
 
   /* ---------- sound (generated, no audio files) ---------- */
@@ -45,11 +81,11 @@
   };
 
   /* ---------- speech ---------- */
-  function speak(text) {
+  function speak(text, lang) {
     if (!("speechSynthesis" in window)) return;
     try {
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-US"; u.rate = 0.85;
+      u.lang = lang || "en-US"; u.rate = 0.85;
       speechSynthesis.cancel();
       speechSynthesis.speak(u);
     } catch (e) { /* ignore */ }
@@ -75,13 +111,17 @@
   }
 
   /* ---------- header ---------- */
-  function buildTopbar(title, subtitle, backHref) {
+  function buildTopbar(title, subtitle, backHref, opts) {
     var bar = document.querySelector(".topbar");
     if (!bar) return;
+    opts = opts || {};
+    var tr = !!opts.tr;                       // Turkish labels for the Turkish games
+    var who = Players.current();
+
     var img = document.createElement("img");
     img.className = "avatar";
     img.src = CFG.avatar || CFG.mascot;
-    img.alt = CFG.playerName || "Player";
+    img.alt = who ? who.name : (CFG.playerName || "Player");
     img.addEventListener("error", function () { img.src = CFG.mascot; img.style.objectPosition = "50% 20%"; });
 
     var h = document.createElement("h1");
@@ -91,13 +131,22 @@
     bar.appendChild(img);
     bar.appendChild(h);
 
+    if (who) {
+      var chip = document.createElement("button");
+      chip.className = "who-chip";
+      chip.title = tr ? "Oyuncuyu değiştir" : "Change player";
+      chip.innerHTML = '<span class="e">' + who.emoji + '</span><span class="n">' + who.name + '</span>';
+      chip.addEventListener("click", function () { Players.clear(); location.href = "index.html"; });
+      bar.appendChild(chip);
+    }
+
     if (backHref) {
       var a = document.createElement("a");
-      a.className = "btn ghost"; a.href = backHref; a.textContent = "← Back";
+      a.className = "btn ghost"; a.href = backHref; a.textContent = tr ? "← Geri" : "← Back";
       bar.appendChild(a);
     }
     var out = document.createElement("button");
-    out.className = "btn red"; out.textContent = "Log out";
+    out.className = "btn red"; out.textContent = tr ? "Çıkış" : "Log out";
     out.addEventListener("click", Auth.logout);
     bar.appendChild(out);
   }
@@ -108,6 +157,11 @@
     bad: ["Almost!", "Try again!", "No worries 💪", "Next one is yours!"],
     idle: ["Let's learn!", "Ready?", "You can do it!"]
   };
+
+  /* a page can swap these for another language */
+  function setLines(obj) {
+    Object.keys(obj || {}).forEach(function (k) { LINES[k] = obj[k]; });
+  }
 
   function react(mood, customText) {
     var m = document.getElementById("mascot");
@@ -178,8 +232,9 @@
   }
 
   window.EG = {
-    cfg: CFG, Auth: Auth, Sound: Sound, Scores: Scores,
+    cfg: CFG, Auth: Auth, Players: Players, Sound: Sound, Scores: Scores,
     speak: speak, shuffle: shuffle, pickSome: pickSome,
-    buildTopbar: buildTopbar, react: react, confetti: confetti, startTimer: startTimer
+    buildTopbar: buildTopbar, react: react, setLines: setLines,
+    confetti: confetti, startTimer: startTimer
   };
 })();

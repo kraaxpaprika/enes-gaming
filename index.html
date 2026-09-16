@@ -39,6 +39,14 @@
     <button class="btn red" type="submit" style="width:100%">Let's play! 🎮</button>
     <div class="error" id="err"></div>
   </form>
+
+  <!-- shown after the password: who is playing today? -->
+  <div class="login-card" id="whoCard" hidden>
+    <img class="mascot lg" src="assets/img/mascot.svg" alt="Mascot">
+    <h1>Kim oynuyor?</h1>
+    <p class="sub">Puanların ve süren sana özel kaydedilir 🏅</p>
+    <div class="who-list" id="whoList"></div>
+  </div>
 </div>
 
 <script src="assets/js/config.js"></script>
@@ -48,7 +56,33 @@
   var err = document.getElementById("err");
   var mascot = document.getElementById("mascot");
 
-  if (EG.Auth.isLoggedIn()) location.replace("hub.html");
+  var form = document.getElementById("loginForm");
+  var whoCard = document.getElementById("whoCard");
+
+  /* ---------- step 2: pick the player ---------- */
+  function showWhoStep() {
+    form.hidden = true;
+    whoCard.hidden = false;
+    var list = document.getElementById("whoList");
+    list.innerHTML = "";
+    EG.Players.list().forEach(function (p) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "who-btn";
+      b.innerHTML = '<span class="e">' + p.emoji + '</span><span class="n">' + p.name + '</span>';
+      b.addEventListener("click", function () {
+        EG.Sound.good();
+        EG.Players.select(p.id);
+        location.href = "hub.html";
+      });
+      list.appendChild(b);
+    });
+  }
+
+  if (EG.Auth.isLoggedIn()) {
+    if (EG.Players.current()) location.replace("hub.html");
+    else showWhoStep();
+  }
 
   document.getElementById("keypad").addEventListener("click", function (e) {
     var b = e.target.closest("button");
@@ -68,7 +102,7 @@
       EG.Sound.good();
       mascot.classList.add("cheer");
       EG.Auth.login();
-      setTimeout(function () { location.href = "hub.html"; }, 380);
+      setTimeout(showWhoStep, 380);
     } else {
       err.textContent = "Oops! Wrong password 🔑";
       EG.Sound.bad();

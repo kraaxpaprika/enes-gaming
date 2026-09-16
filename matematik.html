@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matematik — Enes &amp; Fatih Mert Gaming</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>➕</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"></div>
+
+  <!-- ---------- 1. ekran: seviye seçimi ---------- -->
+  <div class="card" id="setupCard">
+    <div class="mascot-row" style="justify-content:flex-start">
+      <img class="mascot" src="assets/img/mascot.svg" alt="Maskot" style="width:86px">
+      <div class="speech">Hadi matematik çalışalım!</div>
+    </div>
+
+    <h3 class="mt">1️⃣ Ne yapalım?</h3>
+    <div class="levels" id="opBox">
+      <button class="level on" data-op="+"><span class="lv-e">➕</span>Toplama<small>3 + 4 = ?</small></button>
+      <button class="level" data-op="-"><span class="lv-e">➖</span>Çıkarma<small>9 − 4 = ?</small></button>
+      <button class="level" data-op="mix"><span class="lv-e">🔀</span>Karışık<small>ikisi birden</small></button>
+    </div>
+
+    <h3 class="mt">2️⃣ Sayılar kaç basamaklı?</h3>
+    <div class="levels" id="digitBox">
+      <button class="level on" data-d="1"><span class="lv-e">🐣</span>Tek basamaklı<small>1 – 9</small></button>
+      <button class="level" data-d="2"><span class="lv-e">🐥</span>İki basamaklı<small>10 – 99</small></button>
+      <button class="level" data-d="3"><span class="lv-e">🦅</span>Üç basamaklı<small>100 – 999</small></button>
+    </div>
+
+    <div class="center mt">
+      <button class="btn green" id="startBtn" style="font-size:20px;padding:16px 34px">Başla! 🚀</button>
+    </div>
+  </div>
+
+  <!-- ---------- 2. ekran: oyun ---------- -->
+  <div id="gameWrap" hidden>
+    <div class="hud">
+      <span class="pill">⭐ Puan: <b id="score">0</b></span>
+      <span class="pill">❓ <b id="qnum">1</b> / <b id="qtotal">10</b></span>
+      <span class="pill">🏆 Rekor: <b id="best">0</b></span>
+      <span class="pill">⏱️ <b id="clock">00:00</b></span>
+      <span class="bar"><i id="progress"></i></span>
+    </div>
+
+    <div class="card">
+      <div class="mascot-row" style="justify-content:flex-start">
+        <img class="mascot" id="mascot" src="assets/img/mascot.svg" alt="Maskot" style="width:86px">
+        <div class="speech" id="speech">Bakalım, kaç eder?</div>
+      </div>
+
+      <div class="sum mt" id="sum"></div>
+
+      <div class="feedback" id="feedback"></div>
+
+      <div class="numpad" id="numpad">
+        <button type="button" data-k="1">1</button>
+        <button type="button" data-k="2">2</button>
+        <button type="button" data-k="3">3</button>
+        <button type="button" data-k="4">4</button>
+        <button type="button" data-k="5">5</button>
+        <button type="button" data-k="6">6</button>
+        <button type="button" data-k="7">7</button>
+        <button type="button" data-k="8">8</button>
+        <button type="button" data-k="9">9</button>
+        <button type="button" class="del" data-k="del">⌫</button>
+        <button type="button" data-k="0">0</button>
+        <button type="button" class="ok" data-k="ok">✔️</button>
+      </div>
+
+      <div class="center mt" id="endBox" hidden>
+        <h2 id="endTitle"></h2>
+        <p id="endText"></p>
+        <button class="btn green" id="againBtn">Tekrar oyna 🔁</button>
+        <button class="btn yellow" id="levelBtn">Seviye değiştir ⚙️</button>
+        <a class="btn ghost" href="hub.html">Oyun menüsü</a>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">Enes &amp; Fatih Mert için ❤️ ile yapıldı</p>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+EG.Auth.guard();
+EG.buildTopbar("Matematik ➕", "Toplama ve çıkarma alıştırması", "hub.html", { tr: true });
+EGStats.beginSession("math");
+
+EG.setLines({
+  good: ["Aferin!", "Harikasın! 🎉", "Süper!", "Çok iyi!", "Bravo!", "Böyle devam!"],
+  bad:  ["Az kaldı!", "Tekrar dene!", "Olsun, devam 💪", "Sıradaki senin!"],
+  idle: ["Bakalım, kaç eder?", "Hazır mısın?", "Yapabilirsin!"]
+});
+
+var TOTAL = 10;
+var $ = function (id) { return document.getElementById(id); };
+
+var setup = { op: "+", digits: 1 };
+var round = 0, score = 0, current = null, typed = "", locked = false;
+
+/* ---------- seviye seçimi ---------- */
+function wireChooser(boxId, key, attr, cast) {
+  $(boxId).addEventListener("click", function (e) {
+    var b = e.target.closest(".level");
+    if (!b) return;
+    Array.prototype.forEach.call(this.querySelectorAll(".level"), function (x) { x.classList.remove("on"); });
+    b.classList.add("on");
+    setup[key] = cast ? cast(b.dataset[attr]) : b.dataset[attr];
+    EG.Sound.init();
+  });
+}
+wireChooser("opBox", "op", "op");
+wireChooser("digitBox", "digits", "d", Number);
+
+/* ---------- soru üretimi ---------- */
+function randomIn(digits) {
+  if (digits === 1) return 1 + Math.floor(Math.random() * 9);          // 1..9
+  if (digits === 2) return 10 + Math.floor(Math.random() * 90);        // 10..99
+  return 100 + Math.floor(Math.random() * 900);                        // 100..999
+}
+
+function makeQuestion() {
+  var op = setup.op === "mix" ? (Math.random() < 0.5 ? "+" : "-") : setup.op;
+  var a = randomIn(setup.digits), b = randomIn(setup.digits);
+
+  if (op === "+") {
+    // ilk seviyede sonuç 10'u geçmesin - yeni başlayan için daha kolay
+    if (setup.digits === 1) {
+      a = 1 + Math.floor(Math.random() * 8);
+      b = 1 + Math.floor(Math.random() * (9 - a));
+    }
+    return { a: a, b: b, op: "+", answer: a + b };
+  }
+
+  // çıkarmada sonuç hiçbir zaman eksi olmasın
+  if (b > a) { var t = a; a = b; b = t; }
+  return { a: a, b: b, op: "−", answer: a - b };
+}
+
+/* ---------- oyun akışı ---------- */
+function startGame() {
+  round = 0; score = 0;
+  $("setupCard").hidden = true;
+  $("gameWrap").hidden = false;
+  $("score").textContent = "0";
+  $("best").textContent = EG.Scores.get("math");
+  $("qtotal").textContent = TOTAL;
+  $("endBox").hidden = true;
+  $("numpad").hidden = false;
+  nextQuestion();
+}
+
+function nextQuestion() {
+  if (round >= TOTAL) return endGame();
+  round++;
+  locked = false;
+  typed = "";
+  $("qnum").textContent = round;
+  $("progress").style.width = ((round - 1) / TOTAL * 100) + "%";
+  $("feedback").textContent = "";
+  $("feedback").className = "feedback";
+  current = makeQuestion();
+  $("sum").innerHTML = current.a + " " + current.op + " " + current.b +
+                       ' = <span class="blank" id="blank">?</span>';
+  showTyped();
+  EG.react("idle");
+}
+
+function showTyped() {
+  var blank = $("blank");
+  if (blank) blank.textContent = typed === "" ? "?" : typed;
+}
+
+function press(k) {
+  if (locked) return;
+  EG.Sound.init();
+  if (k === "del") { typed = typed.slice(0, -1); showTyped(); return; }
+  if (k === "ok") { check(); return; }
+  if (typed.length >= 4) return;
+  if (typed === "0") typed = "";          // baştaki sıfırı at
+  typed += k;
+  showTyped();
+}
+
+function check() {
+  if (typed === "") return;
+  locked = true;
+  var isRight = Number(typed) === current.answer;
+
+  if (isRight) {
+    score += 10;
+    $("score").textContent = score;
+    $("blank").style.color = "#0a8a4a";
+    $("feedback").textContent = "Doğru! " + current.a + " " + current.op + " " + current.b + " = " + current.answer;
+    $("feedback").className = "feedback good";
+    EG.Sound.good();
+    EG.react("good");
+  } else {
+    $("blank").style.color = "var(--red-dark)";
+    $("feedback").textContent = "Doğrusu " + current.answer + " olacaktı.";
+    $("feedback").className = "feedback bad";
+    EG.Sound.bad();
+    EG.react("bad");
+  }
+  EGStats.answer(isRight);
+  EG.speak(String(current.answer), "tr-TR");
+  setTimeout(nextQuestion, isRight ? 1200 : 2000);
+}
+
+function endGame() {
+  $("progress").style.width = "100%";
+  $("numpad").hidden = true;
+  $("sum").textContent = score >= 80 ? "🏆" : score >= 50 ? "🎉" : "💪";
+  $("feedback").textContent = "";
+
+  var isBest = EGStats.finishRound("math", score, TOTAL);
+  $("endBox").hidden = false;
+  $("endTitle").textContent = score + " puan aldın!";
+  $("endText").textContent = isBest ? "Bu yeni bir rekor! 🌟" : "En iyi puanın: " + EG.Scores.get("math") + ".";
+  $("best").textContent = EG.Scores.get("math");
+  EG.Sound.win();
+  EG.react("good", isBest ? "Yeni rekor! 🏆" : "İyi oyundu!");
+  if (score >= 70) EG.confetti();
+}
+
+/* ---------- girişler ---------- */
+$("numpad").addEventListener("click", function (e) {
+  var b = e.target.closest("button");
+  if (b) press(b.dataset.k);
+});
+
+document.addEventListener("keydown", function (e) {
+  if ($("gameWrap").hidden) return;
+  if (e.key >= "0" && e.key <= "9") press(e.key);
+  else if (e.key === "Backspace") { e.preventDefault(); press("del"); }
+  else if (e.key === "Enter") press("ok");
+});
+
+$("startBtn").addEventListener("click", startGame);
+$("againBtn").addEventListener("click", startGame);
+$("levelBtn").addEventListener("click", function () {
+  $("gameWrap").hidden = true;
+  $("setupCard").hidden = false;
+});
+
+EG.startTimer("clock");
+</script>
+</body>
+</html>

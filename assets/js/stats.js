@@ -3,7 +3,8 @@
    Everything is stored in the browser (localStorage) on this device.
    ================================================================== */
 (function () {
-  var KEY = "eg_stats_v1";
+  var BASE_KEY = "eg_stats_v1";          // the old single-profile key
+  var LEGACY_PLAYER = "ortak";           // where that old data now lives
   var HEARTBEAT_MS = 5000;   // how often play time is written down
   var MAX_HISTORY = 60;      // how many finished games we remember
 
@@ -11,26 +12,50 @@
     word: { name: "Word Safari", emoji: "🦁", href: "word-safari.html" },
     flag: { name: "Flag Hunt", emoji: "🚩", href: "flag-hunt.html" },
     map:  { name: "Map Explorer", emoji: "🌍", href: "map-explorer.html" },
-    turkey: { name: "Türkiye Explorer", emoji: "🗺️", href: "turkey-provinces.html" }
+    turkey: { name: "Türkiye Explorer", emoji: "🗺️", href: "turkey-provinces.html" },
+    math: { name: "Matematik", emoji: "➕", href: "matematik.html" },
+    kelime: { name: "Kelime Tamamlama", emoji: "🔤", href: "kelime.html" },
+    proje: { name: "Proje Çocuk", emoji: "🌟", href: "proje-cocuk.html" }
   };
 
-  var SCHEMA = 1;   // bump this when the shape of the saved JSON changes
+  var SCHEMA = 2;   // bump this when the shape of the saved JSON changes
+
+  /* ---------- which player's file we are reading and writing ---------- */
+  var playerId = "";
+  try { playerId = localStorage.getItem("eg_player") || ""; } catch (e) { playerId = ""; }
+
+  function keyFor(id) { return BASE_KEY + "__" + (id || "ortak"); }
+  function KEY() { return keyFor(playerId); }
+
+  /* The very first version of the site kept one shared file. Move it to its
+     own "ortak" player so nothing is lost when profiles were introduced. */
+  (function moveLegacyFile() {
+    try {
+      var old = localStorage.getItem(BASE_KEY);
+      if (!old) return;
+      if (!localStorage.getItem(keyFor(LEGACY_PLAYER))) {
+        localStorage.setItem(keyFor(LEGACY_PLAYER), old);
+      }
+      localStorage.removeItem(BASE_KEY);
+    } catch (e) { /* blocked */ }
+  })();
 
   function blank() {
-    return { v: SCHEMA, player: (window.GAME_CONFIG || {}).playerName || "", games: {}, history: [], days: {}, firstPlay: null };
+    return { v: SCHEMA, player: playerId, games: {}, history: [], days: {}, firstPlay: null };
   }
 
   /* Bring an older saved file up to the current shape. */
   function migrate(d) {
-    if (!d.v) d.v = SCHEMA;             // v0 files had the same fields, just no version
+    if (!d.v) d.v = 1;                  // v0 files had the same fields, just no version
+    if (d.v === 1) { d.v = 2; }         // v2 only changed where the file is stored
     // future migrations go here:
-    // if (d.v === 1) { ...; d.v = 2; }
+    // if (d.v === 2) { ...; d.v = 3; }
     return d;
   }
 
-  function load() {
+  function load(id) {
     try {
-      var raw = localStorage.getItem(KEY);
+      var raw = localStorage.getItem(id ? keyFor(id) : KEY());
       var d = raw ? JSON.parse(raw) : blank();
       if (!d.games) d.games = {};
       if (!d.history) d.history = [];
@@ -40,7 +65,7 @@
   }
 
   function save(d) {
-    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* full or blocked */ }
+    try { localStorage.setItem(KEY(), JSON.stringify(d)); } catch (e) { /* full or blocked */ }
   }
 
   function gameRow(d, key) {
@@ -72,6 +97,55 @@
 
   var Stats = {
     GAMES: GAMES,
+
+    /* point every read and write at one player's file */
+    usePlayer: function (id) { if (id && id !== playerId) { playerId = id; } },
+    player: function () { return playerId; },
+
+    /* every player who has a saved file, plus the ones set up in config.
+       This is what the grown-up dashboard uses: who played, how long, when. */
+    everyone: function () {
+      var cfgPlayers = ((window.GAME_CONFIG || {}).players || []).slice();
+      var known = {};
+      cfgPlayers.forEach(function (p) { known[p.id] = true; });
+
+      /* files that exist but are not in the config any more (e.g. "ortak") */
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf(BASE_KEY + "__") === 0) {
+            var id = k.slice((BASE_KEY + "__").length);
+            if (!known[id]) {
+              known[id] = true;
+              cfgPlayers.push({ id: id, name: id === LEGACY_PLAYER ? "Eski kayıt" : id, emoji: "👤" });
+            }
+          }
+        }
+      } catch (e) { /* blocked */ }
+
+      return cfgPlayers.map(function (p) {
+        var d = load(p.id);
+        var timeMs = 0, plays = 0, points = 0, correct = 0, wrong = 0;
+        Object.keys(d.games).forEach(function (k) {
+          var g = d.games[k];
+          timeMs += g.timeMs; plays += g.plays; points += g.totalScore;
+          correct += g.correct; wrong += g.wrong;
+        });
+        var last = null;
+        Object.keys(d.games).forEach(function (k) {
+          var lp = d.games[k].lastPlayed;
+          if (lp && (!last || lp > last)) last = lp;
+        });
+        return {
+          id: p.id, name: p.name, emoji: p.emoji,
+          timeMs: timeMs, plays: plays, points: points,
+          accuracy: (correct + wrong) ? Math.round(correct / (correct + wrong) * 100) : 0,
+          lastPlayed: last,
+          days: d.days || {},
+          games: d.games || {}
+        };
+      }).sort(function (a, b) { return b.timeMs - a.timeMs; });
+    },
 
     /* call once when a game screen opens */
     beginSession: function (key) {
@@ -125,7 +199,7 @@
 
     all: function () { return load(); },
 
-    reset: function () { try { localStorage.removeItem(KEY); } catch (e) {} },
+    reset: function () { try { localStorage.removeItem(KEY()); } catch (e) {} },
 
     /* replace everything with a downloaded backup file */
     importJSON: function (text) {

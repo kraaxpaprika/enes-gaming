@@ -29,6 +29,15 @@
     </div>
   </div>
 
+  <!-- for the grown-ups: everyone on this device, who played what and for how long -->
+  <div class="card">
+    <h3>👨‍👩‍👦 Tüm oyuncular / All players</h3>
+    <p style="color:var(--muted);margin-top:0;font-size:14px">
+      Bu cihazda oynayan herkesin toplam süresi. Sıralama: en çok oynayan üstte.
+    </p>
+    <div style="overflow-x:auto"><div id="whoTable"></div></div>
+  </div>
+
   <div class="card">
     <h3>⏱️ Play time — last 7 days</h3>
     <div class="chart" id="days"></div>
@@ -78,7 +87,9 @@
 <script src="assets/js/app.js"></script>
 <script>
 EG.Auth.guard();
-EG.buildTopbar("My Progress 📊", "Scores, time and badges", "hub.html");
+var whoNow = EG.Players.current();
+EG.buildTopbar("My Progress 📊",
+  "Scores, time and badges" + (whoNow ? " — " + whoNow.name : ""), "hub.html");
 
 var $ = function (id) { return document.getElementById(id); };
 
@@ -95,6 +106,30 @@ function render() {
   $("speech").textContent = t.plays === 0
     ? "No games yet — let's play one! 🎮"
     : "You have played " + t.plays + (t.plays === 1 ? " game" : " games") + ". Keep going!";
+
+  /* ----- everyone on this device ----- */
+  var todayIso = new Date().toISOString().slice(0, 10);
+  var meId = EG.Players.currentId();
+  var rows = EGStats.everyone();
+  var anyPlay = rows.some(function (r) { return r.plays > 0 || r.timeMs > 0; });
+
+  if (!anyPlay) {
+    $("whoTable").innerHTML = '<div class="empty">Henüz kimse oynamadı.</div>';
+  } else {
+    $("whoTable").innerHTML = '<table class="who-table"><thead><tr>' +
+      '<th>Oyuncu</th><th>Toplam süre</th><th>Bugün</th><th>Oyun</th><th>Doğru</th><th>Son oynama</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (r) {
+        return '<tr' + (r.id === meId ? ' class="me"' : '') + '>' +
+          '<td class="name"><span class="e">' + r.emoji + '</span>' + r.name + '</td>' +
+          '<td>' + EGStats.fmtTime(r.timeMs) + '</td>' +
+          '<td>' + EGStats.fmtTime(r.days[todayIso] || 0) + '</td>' +
+          '<td>' + r.plays + '</td>' +
+          '<td>' + r.accuracy + '%</td>' +
+          '<td>' + (r.lastPlayed ? EGStats.fmtDate(r.lastPlayed) : "—") + '</td>' +
+          '</tr>';
+      }).join("") + '</tbody></table>';
+  }
 
   /* ----- last 7 days ----- */
   var days = EGStats.lastDays(7);
@@ -184,7 +219,8 @@ $("exportBtn").addEventListener("click", function () {
   var blob = new Blob([JSON.stringify(EGStats.all(), null, 2)], { type: "application/json" });
   var a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "enes-fatih-mert-gaming-progress-" + new Date().toISOString().slice(0, 10) + ".json";
+  a.download = "eg-progress-" + (EG.Players.currentId() || "player") + "-" +
+               new Date().toISOString().slice(0, 10) + ".json";
   a.click();
   URL.revokeObjectURL(a.href);
   $("backupMsg").textContent = "Saved to your downloads ✅";
@@ -208,7 +244,8 @@ $("fileInput").addEventListener("change", function (e) {
 });
 
 $("resetBtn").addEventListener("click", function () {
-  if (!confirm("Delete all scores, play time and badges? This cannot be undone.")) return;
+  if (!confirm("Delete all scores, play time and badges for " +
+               (whoNow ? whoNow.name : "this player") + "? This cannot be undone.")) return;
   EGStats.reset();
   render();
   $("backupMsg").textContent = "Everything was reset.";

@@ -217,6 +217,9 @@ h1, h2, h3 {
 .game-card.c-flag { --accent: var(--red); }
 .game-card.c-map { --accent: var(--green); }
 .game-card.c-stats { --accent: var(--pink); }
+.game-card.c-math { --accent: var(--blue); }
+.game-card.c-kelime { --accent: var(--purple); }
+.game-card.c-proje { --accent: var(--yellow); }
 
 .mini-stats { font-size: 13px; color: var(--ink); margin-top: 12px; font-weight: 700; }
 .mini-stats b { color: var(--ink); }
@@ -447,6 +450,131 @@ h1, h2, h3 {
 .hist td.score b { color: #0a8a4a; }
 .hist .tag { background: var(--yellow); border: 2px solid var(--black); border-radius: 0; padding: 3px 10px; font-size: 13px; font-weight: 800; }
 
+/* ---------- who is playing ---------- */
+.who-list { display: grid; gap: 12px; margin-top: 6px; }
+
+.who-btn {
+  font: inherit; font-weight: 800; font-size: 20px;
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; padding: 14px 18px; text-align: left;
+  border: var(--brut-border); border-radius: 0;
+  background: var(--paper); color: var(--ink);
+  box-shadow: var(--shadow-sm); cursor: pointer;
+  transition: transform .06s ease, box-shadow .06s ease, background .2s ease;
+}
+.who-btn:hover { background: var(--yellow); transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--black); }
+.who-btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--black); }
+.who-btn .e { font-size: 34px; line-height: 1; }
+
+.who-chip {
+  font: inherit; font-weight: 800; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 12px; cursor: pointer;
+  border: var(--brut-border); border-radius: 0;
+  background: var(--paper); color: var(--ink);
+  box-shadow: var(--shadow-sm); white-space: nowrap;
+}
+.who-chip:hover { background: var(--green); }
+.who-chip .e { font-size: 18px; }
+
+/* ---------- level chooser (shared by the Turkish games) ---------- */
+.levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 16px; }
+
+.level {
+  font: inherit; font-weight: 800; font-size: 17px;
+  padding: 18px 12px; cursor: pointer; text-align: center;
+  border: var(--brut-border); border-radius: 0;
+  background: var(--paper); color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transition: transform .06s ease, box-shadow .06s ease, background .2s ease;
+}
+.level:hover { background: var(--yellow); transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--black); }
+.level:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--black); }
+.level.on { background: var(--green); }
+.level .lv-e { display: block; font-size: 32px; line-height: 1; margin-bottom: 6px; }
+.level small { display: block; font-weight: 600; color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+.hearts { font-size: 24px; letter-spacing: 2px; }
+
+/* ---------- maths ---------- */
+.sum {
+  font-family: "Archivo Black", sans-serif;
+  font-size: clamp(38px, 12vw, 68px);
+  text-align: center; line-height: 1.2;
+  letter-spacing: 2px;
+  animation: pop .3s ease;
+}
+.sum .blank {
+  display: inline-block; min-width: 1.6em;
+  border-bottom: 8px solid var(--black);
+  color: var(--blue);
+}
+
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 340px; margin: 18px auto 0; }
+.numpad button {
+  font: inherit; font-family: "Archivo Black", sans-serif; font-size: 26px;
+  padding: 16px 0; cursor: pointer;
+  border: var(--brut-border); border-radius: 0;
+  background: var(--paper); color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.numpad button:hover { background: var(--yellow); }
+.numpad button:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--black); }
+.numpad button.ok { background: var(--green); }
+.numpad button.del { background: var(--red); color: #fff; }
+
+/* ---------- word completion ---------- */
+.word-slots { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.slot {
+  width: 58px; height: 68px;
+  display: grid; place-items: center;
+  font-family: "Archivo Black", sans-serif; font-size: 30px;
+  border: var(--brut-border); background: var(--paper);
+  box-shadow: var(--shadow-sm);
+  text-transform: uppercase;
+}
+.slot.fixed { background: var(--yellow); }
+.slot.hole { background: #fff; border-style: dashed; color: var(--blue); }
+.slot.hole.active { background: var(--yellow); border-style: solid; box-shadow: 0 0 0 4px var(--blue); }
+.slot.hole.over { background: var(--green); }
+.slot.hole.filled { border-style: solid; background: var(--paper); color: var(--ink); }
+.slot.good { background: var(--green); }
+.slot.bad { background: var(--red); color: #fff; animation: shake .4s ease; }
+
+.letter-bank { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+
+.letter {
+  width: 58px; height: 62px;
+  display: grid; place-items: center;
+  font: inherit; font-family: "Archivo Black", sans-serif; font-size: 26px;
+  text-transform: uppercase; cursor: grab;
+  border: var(--brut-border); border-radius: 0;
+  background: var(--paper); color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  touch-action: none; user-select: none;
+}
+.letter:hover { background: var(--yellow); }
+.letter.used { opacity: .28; pointer-events: none; }
+.letter.dragging { opacity: .55; }
+
+/* the tile that follows the finger while dragging */
+.drag-ghost {
+  position: fixed; z-index: 90; pointer-events: none;
+  width: 58px; height: 62px; display: grid; place-items: center;
+  font-family: "Archivo Black", sans-serif; font-size: 26px; text-transform: uppercase;
+  border: var(--brut-border); background: var(--yellow);
+  box-shadow: var(--shadow); transform: translate(-50%, -50%);
+}
+
+/* ---------- grown-up dashboard ---------- */
+.who-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.who-table th { text-align: left; color: var(--muted); font-size: 13px; padding: 6px 8px; text-transform: uppercase; font-weight: 800; }
+.who-table td { padding: 10px 8px; border-top: 2px solid var(--black); font-weight: 700; }
+.who-table td.name { display: flex; align-items: center; gap: 8px; }
+.who-table td.name .e { font-size: 22px; }
+.who-table tr.me td { background: var(--yellow); }
+
 /* ---------- confetti ---------- */
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
 
@@ -500,10 +628,32 @@ h1, h2, h3 {
 
   .hist { font-size: 13px; }
   .hist td, .hist th { padding: 7px 4px; }
+
+  /* the topbar gets crowded once the player chip is there */
+  .who-chip { font-size: 12px; padding: 7px 9px; }
+  .who-chip .n { display: none; }
+  .who-chip .e { font-size: 20px; }
+
+  .levels { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .level { font-size: 15px; padding: 14px 8px; }
+  .level .lv-e { font-size: 26px; }
+
+  .numpad { max-width: 100%; gap: 8px; }
+  .numpad button { font-size: 24px; padding: 18px 0; }
+
+  .word-slots { gap: 6px; }
+  .slot { width: 44px; height: 54px; font-size: 24px; }
+  .letter, .drag-ghost { width: 48px; height: 52px; font-size: 22px; }
+  .letter-bank { gap: 8px; }
+
+  .who-table { font-size: 13px; }
+  .who-table td, .who-table th { padding: 8px 4px; }
 }
 
 /* very narrow phones */
 @media (max-width: 380px) {
   .options { grid-template-columns: 1fr; }
   .topbar h1 { font-size: 15px; }
+  .slot { width: 38px; height: 48px; font-size: 20px; }
+  .letter, .drag-ghost { width: 42px; height: 46px; font-size: 19px; }
 }

@@ -60,6 +60,14 @@
       <div class="mini-stats">Best <b id="best-turkey">0</b> · Played <b id="plays-turkey">0</b>× · <b id="time-turkey">0s</b></div>
     </a>
 
+    <a class="game-card c-proje" href="proje-cocuk.html">
+      <div class="emoji">🌟</div>
+      <h2>Proje Çocuk</h2>
+      <p>Koş, zıpla, yıldızları topla! Bebeklikten yetişkinliğe. 🇹🇷</p>
+      <span class="btn green">Oyna</span>
+      <div class="mini-stats">Rekor <b id="best-proje">0</b> · <b id="plays-proje">0</b> oyun · <b id="time-proje">0s</b></div>
+    </a>
+
     <a class="game-card c-stats" href="stats.html">
       <div class="emoji">📊</div>
       <h2>My Progress</h2>
@@ -68,12 +76,21 @@
       <div class="mini-stats"><b id="badge-count">0</b> badges earned</div>
     </a>
 
-    <div class="game-card soon">
+    <a class="game-card c-math" href="matematik.html">
+      <div class="emoji">➕</div>
+      <h2>Matematik</h2>
+      <p>Toplama ve çıkarma — tek, iki ve üç basamaklı sayılarla. 🇹🇷</p>
+      <span class="btn green">Oyna</span>
+      <div class="mini-stats">Rekor <b id="best-math">0</b> · <b id="plays-math">0</b> oyun · <b id="time-math">0s</b></div>
+    </a>
+
+    <a class="game-card c-kelime" href="kelime.html">
       <div class="emoji">🔤</div>
-      <h2>Spell It!</h2>
-      <p>Type the missing letters of the word. Coming soon…</p>
-      <span class="btn ghost">Soon</span>
-    </div>
+      <h2>Kelime Tamamlama</h2>
+      <p>K_L_M_ → eksik harfleri sürükle bırak ile yerine koy. 🇹🇷</p>
+      <span class="btn green">Oyna</span>
+      <div class="mini-stats">Rekor <b id="best-kelime">0</b> · <b id="plays-kelime">0</b> oyun · <b id="time-kelime">0s</b></div>
+    </a>
   </div>
 
   <p class="footer-note">Made with ❤️ for Enes &amp; Fatih Mert</p>
@@ -84,7 +101,8 @@
 <script src="assets/js/app.js"></script>
 <script>
 EG.Auth.guard();
-EG.buildTopbar("Hi " + EG.cfg.playerName + "! 👋", "Choose a game and start learning", null);
+var me = EG.Players.current();
+EG.buildTopbar("Hi " + (me ? me.name : EG.cfg.playerName) + "! 👋", "Choose a game and start learning", null);
 
 var t = EGStats.totals();
 var d = EGStats.all();
@@ -95,7 +113,7 @@ $("t-plays").textContent = t.plays;
 $("t-acc").textContent = t.accuracy + "%";
 $("t-streak").textContent = EGStats.streak();
 
-["word", "flag", "map", "turkey"].forEach(function (k) {
+["word", "flag", "map", "turkey", "math", "kelime", "proje"].forEach(function (k) {
   var g = d.games[k] || { best: 0, plays: 0, timeMs: 0 };
   $("best-" + k).textContent = g.best;
   $("plays-" + k).textContent = g.plays;

@@ -11,7 +11,10 @@ Pure static HTML/CSS/JS — no build step, no framework, no server.
 | 🚩 **Flag Hunt** | Flags, countries and capital cities |
 | 🌍 **Map Explorer** | Continents and countries on a real world map |
 | 🇹🇷 **Türkiye Explorer** | All 81 provinces on a real map of Türkiye |
-| 📊 **My Progress** | Scores, play time, streaks, badges, history |
+| ➕ **Matematik** (TR) | Addition and subtraction, 1/2/3-digit levels — Turkish interface |
+| 🔤 **Kelime Tamamlama** (TR) | Fill the missing letters of a Turkish word by drag & drop |
+| 🌟 **Proje Çocuk** (TR) | A one-file endless runner: run, jump, collect — a gentle satire of over-scheduled childhood |
+| 📊 **My Progress** | Scores, play time, streaks, badges, history, and the per-player table |
 
 ## Log in
 
@@ -23,15 +26,35 @@ To change it, open the browser console and run `btoa("newpassword")`, then paste
 > This is a friendly gate, not real security. Everything runs in the browser, so anyone who reads
 > the page source can find the password. Do not put anything private on the site.
 
+## Players
+
+After the password, the site asks **"Kim oynuyor?"** and the child picks a profile. The list
+lives in `players` in [`assets/js/config.js`](assets/js/config.js):
+
+```js
+players: [
+  { id: "enes",  name: "Enes",       emoji: "🦁" },
+  { id: "fatih", name: "Fatih Mert", emoji: "🐯" },
+  { id: "yegen", name: "Yeğenim",    emoji: "🐣" }
+]
+```
+
+Every profile gets its own progress file, so scores and play time never mix. The chosen profile
+is remembered on the device; the chip in the header switches it. **My Progress** opens with a
+*Tüm oyuncular / All players* table — who played, total time, time today, games and accuracy —
+which is the "who played how much" view.
+
 ## Progress data
 
-There is no server and no database — progress is a single **JSON document in the browser's
-localStorage** (key `eg_stats_v1`), on that device only:
+There is no server and no database — progress is a **JSON document per player in the browser's
+localStorage** (key `eg_stats_v1__<playerId>`, e.g. `eg_stats_v1__enes`), on that device only.
+The old single-profile file (`eg_stats_v1`) is moved to `eg_stats_v1__ortak` automatically the
+first time the new version runs, and shows up as *Eski kayıt* in the table.
 
 ```jsonc
 {
-  "v": 1,                       // schema version, used by migrate() in stats.js
-  "player": "Enes & Fatih Mert",
+  "v": 2,                       // schema version, used by migrate() in stats.js
+  "player": "enes",
   "games": {                    // one row per game
     "word": { "plays": 4, "best": 90, "totalScore": 250,
               "correct": 31, "wrong": 9, "timeMs": 412000,
@@ -81,7 +104,22 @@ Words and countries live in [`assets/js/data.js`](assets/js/data.js):
 ```js
 window.WORDS.push({ emoji: "🐍", word: "snake", topic: "Animals" });
 window.COUNTRIES.push({ code: "ie", name: "Ireland", capital: "Dublin", continent: "Europe" });
+
+// Turkish words for Kelime Tamamlama - always UPPERCASE
+window.TR_WORDS.push({ emoji: "🐍", word: "YILAN", topic: "Hayvanlar" });
 ```
+
+Maths questions are generated, not listed: see `makeQuestion()` in
+[`matematik.html`](matematik.html). Multiplication and division are the natural next step there
+— add an option to the first chooser and a branch in `makeQuestion()`.
+
+**Proje Çocuk** ([`proje-cocuk.html`](proje-cocuk.html)) is fully self-contained — canvas, Web
+Audio chiptune, no assets. Everything content-shaped lives in two arrays at the top of its
+script: `STAGES` (one entry per age band, with its own colours, background props, collectibles
+and obstacles) and `TOASTS` (the project-management one-liners). Adding an age, an activity or a
+joke means adding a line there; the engine itself does not change. Two collectible kinds carry
+the design: `proj` items sit right in the running lane, `joy` items drift higher as the child
+gets older. Append `?fast=10` to the URL to run a whole childhood in ~20 seconds while testing.
 
 Flag pictures come from `flagcdn.com` using the two-letter country code.
 

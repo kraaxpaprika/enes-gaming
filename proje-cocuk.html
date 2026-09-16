@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Proje Çocuk — Enes &amp; Fatih Mert Gaming</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌟</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ==================================================================
+   PROJE ÇOCUK — sadece bu sayfaya ait stiller.
+   Sitenin neobrutalist dili (kalın siyah çerçeve, sert gölge) korunur.
+   ================================================================== */
+.pc-stage {
+  position: relative;
+  width: 100%;
+  max-width: 420px;          /* portrait: telefon genişliği */
+  margin: 0 auto;
+  aspect-ratio: 360 / 470;   /* oyunun mantıksal oranı */
+  max-height: 74vh;          /* telefonda sayfa kaydırmadan sığsın */
+  border: var(--brut-border);
+  box-shadow: var(--shadow);
+  background: #bfe8ff;
+  overflow: hidden;
+  touch-action: manipulation;  /* çift dokunuşta sayfa zoom yapmasın */
+  user-select: none;
+}
+
+.pc-stage canvas { width: 100%; height: 100%; display: block; }
+
+/* ---------- üstteki sade HUD ---------- */
+.pc-hud {
+  position: absolute; left: 0; right: 0; top: 0;
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px; pointer-events: none; z-index: 3;
+  font-weight: 800; font-size: 14px;
+}
+.pc-hud .chip {
+  background: rgba(255,255,255,.92);
+  border: 2px solid var(--black);
+  box-shadow: 2px 2px 0 var(--black);
+  padding: 4px 8px; white-space: nowrap;
+}
+.pc-hud .grow { flex: 1; }
+.pc-hud .chip.hearts { letter-spacing: 1px; }
+
+/* yaş çubuğu */
+.pc-ages {
+  position: absolute; left: 8px; right: 8px; top: 44px; z-index: 3;
+  pointer-events: none;
+}
+.pc-ages .track {
+  height: 12px; background: rgba(255,255,255,.92);
+  border: 2px solid var(--black); box-shadow: 2px 2px 0 var(--black);
+  overflow: hidden;
+}
+.pc-ages .track i {
+  display: block; height: 100%; width: 0;
+  background: repeating-linear-gradient(-45deg, var(--green) 0 10px, var(--yellow) 10px 20px);
+  transition: width .3s linear;
+}
+.pc-ages .marks {
+  display: flex; justify-content: space-between;
+  font-size: 13px; font-weight: 800; margin-top: 2px;
+  text-shadow: 0 1px 0 #fff; letter-spacing: .3px;
+}
+
+/* ---------- sağ üstteki küçük düğmeler ---------- */
+.pc-tools { position: absolute; right: 8px; top: 62px; display: flex; gap: 6px; z-index: 4; }
+.pc-tools button {
+  width: 38px; height: 38px; font-size: 17px; line-height: 1;
+  border: 2px solid var(--black); background: #fff; cursor: pointer;
+  box-shadow: 2px 2px 0 var(--black); padding: 0;
+}
+.pc-tools button:active { transform: translate(2px, 2px); box-shadow: none; }
+.pc-tools button.off { opacity: .45; }
+
+/* ---------- ekranlar (menü / duraklat / sonuç) ---------- */
+.pc-screen {
+  position: absolute; inset: 0; z-index: 6;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 10px; padding: 12px; text-align: center;
+  background: rgba(17,17,17,.55);
+  overflow-y: auto;
+}
+.pc-panel {
+  background: var(--paper); border: var(--brut-border);
+  box-shadow: var(--shadow); padding: 14px 16px 16px; width: 100%; max-width: 330px;
+  margin: auto 0;            /* uzun panel taşarsa üstten kesilmesin */
+}
+.pc-panel h2 { margin: 0 0 6px; font-size: 22px; }
+.pc-panel h3 { margin: 0 0 8px; font-size: 16px; }
+.pc-panel p { margin: 4px 0; font-size: 14px; font-weight: 600; }
+.pc-panel .tiny { font-size: 11px; color: var(--muted); }
+.pc-panel .btn { width: 100%; margin-top: 8px; font-size: 17px; padding: 12px; }
+.pc-hero { font-size: 46px; line-height: 1; }
+
+/* sonuç çubukları */
+.pc-bar { text-align: left; margin: 6px 0; }
+.pc-bar b { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+.pc-bar .t { height: 14px; border: 2px solid var(--black); background: #fff; margin-top: 2px; }
+.pc-bar .t i { display: block; height: 100%; width: 0; background: var(--blue); transition: width .7s ease; }
+.pc-bar.happy .t i { background: var(--green); }
+.pc-bar.fun .t i { background: var(--orange); }
+.pc-bar.free .t i { background: var(--pink); }
+
+/* ---------- oyun içi komik bildirimler ---------- */
+.pc-toast {
+  position: absolute; left: 10px; right: 10px; bottom: 12px; z-index: 5;
+  background: #fff; border: 2px solid var(--black); box-shadow: 3px 3px 0 var(--black);
+  padding: 8px 10px; font-size: 12px; font-weight: 700;
+  opacity: 0; transform: translateY(10px); transition: opacity .25s ease, transform .25s ease;
+  pointer-events: none;
+}
+.pc-toast.on { opacity: 1; transform: translateY(0); }
+.pc-toast b { display: block; font-size: 13px; text-transform: uppercase; }
+
+/* bölüm geçişi afişi */
+.pc-banner {
+  position: absolute; left: 0; right: 0; top: 38%; z-index: 5;
+  text-align: center; font-family: "Archivo Black", sans-serif;
+  font-size: 26px; color: #fff; text-shadow: 3px 3px 0 var(--black);
+  opacity: 0; transition: opacity .3s ease; pointer-events: none;
+}
+.pc-banner.on { opacity: 1; }
+
+@media (max-width: 420px) {
+  .pc-hud { font-size: 12px; }
+  .pc-hud .chip { padding: 3px 6px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"></div>
+
+  <div class="pc-stage" id="stage">
+    <canvas id="cv"></canvas>
+
+    <!-- 7 yaşındaki bir çocuğun okuyabileceği kadar sade HUD -->
+    <div class="pc-hud">
+      <span class="chip">🎂 <b id="hAge">0</b></span>
+      <span class="chip hearts" id="hLives">❤️❤️❤️</span>
+      <span class="grow"></span>
+      <span class="chip">⭐ <b id="hHappy">0</b></span>
+      <span class="chip">📚 <b id="hProj">0</b></span>
+    </div>
+
+    <div class="pc-ages">
+      <div class="track"><i id="hProgress"></i></div>
+      <div class="marks">
+        <span>👶</span><span>🧒</span><span>🎒</span><span>📚</span><span>🎓</span>
+      </div>
+    </div>
+
+    <div class="pc-tools">
+      <button id="btnPause" title="Duraklat">⏸</button>
+      <button id="btnSfx" title="Ses">🔊</button>
+      <button id="btnMusic" title="Müzik">🎵</button>
+    </div>
+
+    <div class="pc-banner" id="banner"></div>
+    <div class="pc-toast" id="toast"></div>
+
+    <!-- ---------- ana menü ---------- -->
+    <div class="pc-screen" id="scrMenu">
+      <div class="pc-panel">
+        <div class="pc-hero">🌟🧒🌟</div>
+        <h2>Proje Çocuk</h2>
+        <p>Dokun → zıpla → yıldızları topla!</p>
+        <button class="btn green" id="btnPlay">▶ OYNA</button>
+        <button class="btn ghost" id="btnHow">❓ Nasıl oynanır?</button>
+        <p class="tiny" style="margin-top:12px">Bu oyun tamamen mizah amaçlıdır. 😊</p>
+      </div>
+    </div>
+
+    <!-- ---------- nasıl oynanır ---------- -->
+    <div class="pc-screen" id="scrHow" hidden>
+      <div class="pc-panel">
+        <div class="pc-hero">👆</div>
+        <h2>Çok kolay!</h2>
+        <p>Ekrana <b>dokun</b> → zıpla</p>
+        <p>Havadayken <b>bir daha dokun</b> → daha yükseğe</p>
+        <p>⭐ ve 📚 topla, kutulara çarpma!</p>
+        <p class="tiny">Bilgisayarda: SPACE veya tıklama.</p>
+        <button class="btn green" id="btnHowOk">TAMAM</button>
+      </div>
+    </div>
+
+    <!-- ---------- doğum / bölüm anlatımı ---------- -->
+    <div class="pc-screen" id="scrIntro" hidden>
+      <div class="pc-panel">
+        <div class="pc-hero" id="introEmoji">👶</div>
+        <h2 id="introTitle">Çocuğunuz doğdu!</h2>
+        <p id="introText">İlk hedef: en iyi kreşi bulmak.</p>
+        <button class="btn green" id="btnGo">HADİ!</button>
+      </div>
+    </div>
+
+    <!-- ---------- duraklat ---------- -->
+    <div class="pc-screen" id="scrPause" hidden>
+      <div class="pc-panel">
+        <div class="pc-hero">⏸</div>
+        <h2>Mola</h2>
+        <p class="tiny">Molalar programa dahil değildir.</p>
+        <button class="btn green" id="btnResume">▶ DEVAM</button>
+        <button class="btn ghost" id="btnQuit">🏠 Menü</button>
+      </div>
+    </div>
+
+    <!-- ---------- canlar bitti ---------- -->
+    <div class="pc-screen" id="scrFail" hidden>
+      <div class="pc-panel">
+        <div class="pc-hero">🤕</div>
+        <h2>Tekrar deneyelim!</h2>
+        <p id="failText">Hiç sorun değil.</p>
+        <button class="btn green" id="btnRetry">🔄 TEKRAR OYNA</button>
+        <button class="btn ghost" id="btnFailMenu">🏠 Menü</button>
+      </div>
+    </div>
+
+    <!-- ---------- 18 yaş: sonuç ---------- -->
+    <div class="pc-screen" id="scrDone" hidden>
+      <div class="pc-panel">
+        <div class="pc-hero">🎓</div>
+        <h2>Tebrikler!</h2>
+        <p style="margin-bottom:10px">Çocuk büyüdü! 🎉</p>
+
+        <div class="pc-bar happy"><b>⭐ Mutluluk</b><div class="t"><i id="bHappy"></i></div></div>
+        <div class="pc-bar"><b>📚 Öğrenme</b><div class="t"><i id="bLearn"></i></div></div>
+        <div class="pc-bar fun"><b>🎨 Eğlence</b><div class="t"><i id="bFun"></i></div></div>
+        <div class="pc-bar free"><b>🌳 Boş zaman</b><div class="t"><i id="bFree"></i></div></div>
+
+        <p id="doneVerdict" style="margin-top:12px"></p>
+        <p class="tiny" id="doneJoke"></p>
+        <button class="btn green" id="btnAgain">🔄 TEKRAR OYNA</button>
+        <a class="btn ghost" href="hub.html">🏠 Oyun menüsü</a>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">Enes &amp; Fatih Mert için ❤️ ile yapıldı</p>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ==================================================================
+   PROJE ÇOCUK
+   Tek dosyalık, bağımlılıksız bir side-scrolling koşu oyunu.
+   Bölümler / nesneler / espriler hep aşağıdaki VERİ bloğundan gelir;
+   yeni bir yaş ya da yeni bir aktivite eklemek için sadece oraya
+   bir satır eklemek yeterli.
+   ================================================================== */
+EG.Auth.guard();
+EG.buildTopbar("Proje Çocuk 🌟", "Koş, zıpla, topla", "hub.html", { tr: true });
+EGStats.beginSession("proje");
+
+(function () {
+"use strict";
+
+var $ = function (id) { return document.getElementById(id); };
+
+/* ============================================================
+   1) VERİ — bölümler, toplanacaklar, engeller, espriler
+   ============================================================ */
+
+/* Oyunun mantıksal çözünürlüğü. Ekran ne olursa olsun bu kutuya
+   göre çiziyoruz, sonra tek seferde ölçekliyoruz. */
+var W = 360, H = 470;
+var GROUND = H - 74;          // zeminin üst çizgisi
+
+/* Yaşlara göre bölümler. sky/ground renkleri arka planı belirler. */
+var STAGES = [
+  {
+    id: "bebek", name: "HOŞ GELDİN BEBEK", from: 0, to: 3, emoji: "👶",
+    sky: "#ffe3f1", hill: "#ffc2e0", ground: "#f7b0d6", far: ["🏠", "🧸", "🍼"],
+    intro: ["👶", "Çocuğunuz doğdu!", "İlk hedef: en iyi kreşi bulmak."],
+    project: [["🍼", "BİBERON İNGİLİZCESİ"], ["🧠", "ERKEN GELİŞİM"], ["🃏", "ZEKÂ KARTLARI"],
+              ["🏫", "ÖZEL KREŞ"], ["👩‍🍼", "BAKICI"], ["🎼", "MONTESSORİ"]],
+    joy:     [["🧸", "OYUNCAK AYI"], ["🍼", "SÜT"], ["🛝", "KAYDIRAK"], ["🎈", "BALON"]],
+    blocks:  ["🧺", "📦", "🪑"]
+  },
+  {
+    id: "cocuk", name: "HER ŞEYİ ÖĞREN!", from: 3, to: 6, emoji: "🧒",
+    sky: "#cdeeff", hill: "#9fdcb4", ground: "#7ac98f", far: ["🌳", "🏡", "🌲"],
+    intro: ["🧒", "Yeni bölüm: Çocukluk", "Her şeyi öğrenme zamanı!"],
+    project: [["🇬🇧", "İNGİLİZCE"], ["🏊", "YÜZME"], ["🎹", "PİYANO"], ["🩰", "BALE"],
+              ["⚽", "FUTBOL"], ["🤖", "ROBOTİK"], ["🎨", "RESİM KURSU"]],
+    joy:     [["🛝", "PARK"], ["⚽", "TOP"], ["🚲", "BİSİKLET"], ["🧱", "LEGO"],
+              ["🍦", "DONDURMA"], ["👫", "ARKADAŞ"]],
+    blocks:  ["📦", "🎒", "🪣"]
+  },
+  {
+    id: "okul", name: "OKUL ZAMANI!", from: 6, to: 11, emoji: "🎒",
+    sky: "#d8e6ff", hill: "#b7c6e8", ground: "#93a7d6", far: ["🏫", "🏢", "🚌"],
+    intro: ["🎒", "Okul zamanı!", "Çanta hazır, program dolu."],
+    project: [["➗", "MATEMATİK"], ["♟️", "SATRANÇ"], ["💻", "KODLAMA"], ["🎻", "KEMAN"],
+              ["🎾", "TENİS"], ["🏊", "YÜZME"], ["🇬🇧", "İNGİLİZCE"], ["📖", "ÖZEL DERS"]],
+    joy:     [["🎮", "OYUN"], ["🐶", "KÖPEK"], ["🌳", "AĞAÇ"], ["🍫", "ÇİKOLATA"], ["👫", "ARKADAŞ"]],
+    blocks:  ["📚", "🎒", "📦"]
+  },
+  {
+    id: "lise", name: "DAHA ÇOK!", from: 11, to: 16, emoji: "📚",
+    sky: "#e6dcff", hill: "#c3b3ef", ground: "#a893e8", far: ["🏙️", "🏬", "🚇"],
+    intro: ["📚", "Lise!", "Program biraz hızlanıyor."],
+    project: [["📝", "DENEME SINAVI"], ["📖", "ÖZEL DERS"], ["🎓", "ÜNİ HAZIRLIK"],
+              ["🇺🇸", "TOEFL"], ["✈️", "YAZ OKULU"], ["📄", "CV"], ["🧪", "OLİMPİYAT"]],
+    joy:     [["🎸", "GİTAR ÇALMAK"], ["🎧", "MÜZİK"], ["🏀", "BASKET"], ["🍕", "PİZZA"], ["👫", "ARKADAŞ"]],
+    blocks:  ["📚", "🗄️", "📦"]
+  },
+  {
+    id: "buyuk", name: "YETİŞKİNLİK", from: 16, to: 18, emoji: "🎓",
+    sky: "#ffe9c9", hill: "#ffd08a", ground: "#f5b95f", far: ["🏙️", "🏦", "🚗"],
+    intro: ["🎓", "Artık büyüdün!", "Ama sorular bitmedi…"],
+    project: [["💼", "STAJ"], ["🔗", "LINKEDIN"], ["🎓", "YÜKSEK LİSANS"], ["🏢", "İŞ"],
+              ["🚗", "ARABA"], ["🏠", "EV"], ["💍", "NE ZAMAN EVLENİYORSUN?"]],
+    joy:     [["☕", "KAHVE MOLASI"], ["🎮", "OYUN"], ["🏖️", "TATİL"], ["👫", "ARKADAŞ"], ["😴", "UYKU"]],
+    blocks:  ["📦", "🗄️", "💼"]
+  }
+];
+
+/* Yetişkinlerin fark edeceği kurumsal/proje yönetimi espriler.
+   Çocuk için sadece ekranda geçen renkli bir kutu. */
+var TOASTS = [
+  ["Boş zaman tespit edildi!", "Yeni aktivite ekleniyor: KODLAMA"],
+  ["Çocuğunuz bugün 14:30–15:30 arası BOŞ.", "Bu durum incelemeye alındı."],
+  ["Hafta sonu programı hazır", "Cumartesi: 7 aktivite · Pazar: 8 aktivite"],
+  ["Çocuğunuz parka gitmek istiyor.", "Park → sosyal gelişim programına eklendi ✓"],
+  ["Milestone achieved", "Yüzme Seviye 4 tamamlandı 🏊"],
+  ["Parent Change Request #27", "Kapsam güncellendi: +2 kurs"],
+  ["Çocuk: bugün hiçbir şey yapmak istemiyorum.", "Harika! Dinlenme becerisi geliştiriliyor."],
+  ["Schedule delay detected!", "Telafi dersi planlandı."],
+  ["Çocuğunuz piyano çalıyor. Seviye: 2", "Anne: peki keman?"],
+  ["Çocuk: ben aslında ne yapmak istiyorum?", "Bu özellik henüz geliştirilmedi."],
+  ["Takvim doluluk oranı: %147", "Performans beklentinin üzerinde 📈"],
+  ["Serbest oyun aktivitesi iptal edildi", "Sebep: kaynak çakışması"]
+];
+
+/* ============================================================
+   2) SES — hepsi Web Audio ile üretiliyor, dosya yok
+   ============================================================ */
+var Audio2 = (function () {
+  var ctx = null, musicOn = true, sfxOn = true, musicTimer = null, step = 0;
+
+  function ac() {
+    if (!ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) ctx = new AC();
+    }
+    if (ctx && ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+
+  /* tek bir nota */
+  function beep(freq, dur, type, vol, when) {
+    var c = ac(); if (!c) return;
+    var t0 = c.currentTime + (when || 0);
+    var osc = c.createOscillator(), g = c.createGain();
+    osc.type = type || "square";
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.15, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(c.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+
+  /* neşeli, kısa chiptune döngüsü (bölüme göre biraz değişir) */
+  var MELODY = [0, 4, 7, 12, 7, 4, 0, 7,  2, 5, 9, 14, 9, 5, 2, 9];
+  var base = 261.63; // do
+
+  function noteHz(semi) { return base * Math.pow(2, semi / 12); }
+
+  function tick() {
+    if (!musicOn) return;
+    var semi = MELODY[step % MELODY.length];
+    beep(noteHz(semi), 0.14, "square", 0.05);
+    if (step % 4 === 0) beep(noteHz(semi - 12), 0.22, "triangle", 0.07);  // bas
+    step++;
+  }
+
+  return {
+    startMusic: function () {
+      ac();
+      if (musicTimer) clearInterval(musicTimer);
+      musicTimer = setInterval(tick, 190);
+    },
+    stopMusic: function () { if (musicTimer) clearInterval(musicTimer); musicTimer = null; },
+    /* bölüm değişince müziğin tonu da değişsin */
+    setKey: function (i) { base = [261.63, 293.66, 329.63, 349.23, 392.00][i % 5]; },
+    setMusic: function (on) { musicOn = on; if (on) Audio2.startMusic(); else Audio2.stopMusic(); },
+    setSfx: function (on) { sfxOn = on; },
+    unlock: function () { ac(); },
+
+    jump:  function () { if (sfxOn) { beep(420, 0.09, "square", 0.12); beep(680, 0.1, "square", 0.1, 0.06); } },
+    star:  function () { if (sfxOn) { beep(880, 0.07, "square", 0.12); beep(1320, 0.09, "square", 0.1, 0.05); } },
+    book:  function () { if (sfxOn) { beep(560, 0.07, "triangle", 0.12); beep(760, 0.08, "triangle", 0.1, 0.05); } },
+    hit:   function () { if (sfxOn) { beep(160, 0.22, "sawtooth", 0.14); } },
+    level: function () { if (sfxOn) [523, 659, 784, 1047].forEach(function (f, i) { beep(f, 0.18, "square", 0.12, i * 0.1); }); },
+    over:  function () { if (sfxOn) [392, 330, 262, 196].forEach(function (f, i) { beep(f, 0.22, "triangle", 0.12, i * 0.13); }); },
+    pop:   function () { if (sfxOn) beep(1000, 0.05, "sine", 0.07); }
+  };
+})();
+
+/* ============================================================
+   3) OYUN DURUMU
+   ============================================================ */
+var cv = $("cv"), ctx = cv.getContext("2d");
+
+var G = {
+  mode: "menu",          // menu | intro | play | pause | fail | done
+  t: 0,                  // geçen süre (sn)
+  dist: 0,               // katedilen mesafe (px)
+  speed: 2.4,
+  age: 0,
+  stage: 0,
+  lives: 3,
+  invuln: 0,             // çarpma sonrası dokunulmazlık (sn)
+  happy: 0,              // ⭐ mutluluk
+  project: 0,            // 📚 puan
+  joyCount: 0,
+  projCount: 0,
+  hitCount: 0,
+  items: [],             // toplanabilirler
+  blocks: [],            // engeller
+  pops: [],              // "+1 YÜZME" gibi uçuşan yazılar
+  clouds: [],
+  bgProps: [],
+  spawnIn: 320,          // bir sonraki gruba kalan mesafe
+  toastIn: 14
+};
+
+/* Bir yaş kaç piksel sürüyor. Tüm oyun ~2.5-3 dakika.
+   Test için adres satırına ?fast=6 eklenirse oyun hızlı akar. */
+var YEARS_PX = 2300;
+var WARMUP = 25;         // ilk kaç saniye hiç engel çıkmasın
+(function () {
+  var m = /[?&]fast=(\d+)/.exec(location.search);
+  if (m) { YEARS_PX = Math.max(60, 2300 / Number(m[1])); WARMUP = 3; }
+})();
+
+var player = {
+  x: 70, y: GROUND - 50, w: 32, h: 50,
+  vy: 0, jumps: 0, onGround: true, runT: 0
+};
+
+var GRAVITY = 1500;      // px/sn²
+var JUMP_V = -620;       // ilk zıplama
+var JUMP_V2 = -520;      // havada ikinci zıplama
+
+/* ============================================================
+   4) YARDIMCILAR
+   ============================================================ */
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function stage() { return STAGES[G.stage]; }
+
+function setHud() {
+  $("hAge").textContent = Math.floor(G.age);
+  $("hHappy").textContent = G.happy;
+  $("hProj").textContent = G.project;
+  $("hLives").textContent = "❤️".repeat(G.lives) + "🖤".repeat(3 - G.lives);
+  $("hProgress").style.width = Math.min(100, G.age / 18 * 100) + "%";
+}
+
+function showScreen(id) {
+  ["scrMenu", "scrHow", "scrIntro", "scrPause", "scrFail", "scrDone"].forEach(function (s) {
+    $(s).hidden = (s !== id);
+  });
+}
+function hideScreens() { showScreen(""); }
+
+var toastTimer = null;
+function toast(title, body) {
+  var el = $("toast");
+  el.innerHTML = "<b>" + title + "</b>" + (body || "");
+  el.classList.add("on");
+  Audio2.pop();
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove("on"); }, 3200);
+}
+
+var bannerTimer = null;
+function banner(text) {
+  var el = $("banner");
+  el.textContent = text;
+  el.classList.add("on");
+  if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(function () { el.classList.remove("on"); }, 1800);
+}
+
+/* ============================================================
+   5) DÜNYA ÜRETİMİ
+   ============================================================ */
+function resetWorld() {
+  G.t = 0; G.dist = 0; G.speed = 2.4; G.age = 0; G.stage = 0;
+  G.lives = 3; G.invuln = 0;
+  G.happy = 0; G.project = 0;
+  G.joyCount = 0; G.projCount = 0; G.hitCount = 0;
+  G.items = []; G.blocks = []; G.pops = [];
+  G.spawnIn = 340; G.toastIn = 16;
+
+  player.y = GROUND - player.h; player.vy = 0; player.jumps = 0; player.onGround = true;
+
+  G.clouds = [];
+  for (var i = 0; i < 4; i++) G.clouds.push({ x: rnd(0, W), y: rnd(70, 170), s: rnd(0.3, 0.8), r: rnd(14, 24) });
+
+  G.bgProps = [];
+  for (var j = 0; j < 5; j++) G.bgProps.push({ x: rnd(0, W * 1.5), e: pick(stage().far), s: rnd(0.25, 0.5) });
+
+  Audio2.setKey(0);
+  setHud();
+}
+
+/* Bir grup nesne üret. Tasarımın püf noktası:
+   - PROJE nesneleri tam koşu hattında, kaçınılmaz gibi durur (kolay toplanır)
+   - MUTLULUK nesneleri yaş ilerledikçe yükselir, yani ulaşmak zorlaşır
+   Çocuk bunu fark etmez; sadece "yıldıza zıplamak" eğlencelidir. */
+function spawnGroup() {
+  var st = stage();
+  var ageRatio = Math.min(1, G.age / 18);
+
+  /* engeller ilk 25 saniyede hiç çıkmaz - oyun çok kolay başlasın */
+  var blockChance = G.t < WARMUP ? 0 : Math.min(0.42, 0.12 + ageRatio * 0.34);
+
+  if (Math.random() < blockChance) {
+    var h = rnd(26, 26 + ageRatio * 16);
+    G.blocks.push({ x: W + 30, y: GROUND - h, w: 30, h: h, e: pick(st.blocks) });
+    /* engelin hemen üstüne bir ödül koy: zıplamak ödüllendirilsin */
+    if (Math.random() < 0.7) addItem(W + 30 + 15, GROUND - h - 58, Math.random() < 0.5 ? "joy" : "proj");
+    G.spawnIn = rnd(210, 300);
+    return;
+  }
+
+  /* toplanabilir dizisi: 3 nesne */
+  var isJoy = Math.random() < (0.55 - ageRatio * 0.3);   // yaş ilerledikçe proje nesneleri artar
+  var kind = isJoy ? "joy" : "proj";
+
+  /* proje nesneleri yerde, mutluluk nesneleri yaşla birlikte yukarı kaçar */
+  var y = kind === "proj"
+    ? GROUND - rnd(46, 70)
+    : Math.max(118, GROUND - (48 + ageRatio * 110 + rnd(0, 26)));
+
+  var n = 3, gap = 42;
+  for (var i = 0; i < n; i++) addItem(W + 30 + i * gap, y - (kind === "joy" ? Math.sin(i / (n - 1) * Math.PI) * 18 : 0), kind);
+
+  G.spawnIn = rnd(190, 270);
+}
+
+function addItem(x, y, kind) {
+  var st = stage();
+  var def = kind === "joy" ? pick(st.joy) : pick(st.project);
+  G.items.push({ x: x, y: y, r: 15, kind: kind, e: def[0], label: def[1], t: Math.random() * 6 });
+}
+
+/* ============================================================
+   6) GİRİŞ (tek parmak / space / tıklama)
+   ============================================================ */
+function jump() {
+  if (G.mode !== "play") return;
+  if (player.jumps >= 2) return;
+  player.vy = player.jumps === 0 ? JUMP_V : JUMP_V2;
+  player.jumps++;
+  player.onGround = false;
+  Audio2.jump();
+}
+
+$("stage").addEventListener("pointerdown", function (e) {
+  /* düğmelere ve menü panellerine basılınca zıplama */
+  if (e.target.closest("button") || e.target.closest(".pc-screen")) return;
+  Audio2.unlock();
+  jump();
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.code === "Space" || e.code === "ArrowUp" || e.key === " ") {
+    e.preventDefault();
+    Audio2.unlock();
+    if (G.mode === "menu") startGame();
+    else jump();
+  }
+  if (e.key === "p" || e.key === "P") togglePause();
+});
+
+/* ============================================================
+   7) OYUN DÖNGÜSÜ
+   ============================================================ */
+function update(dt) {
+  G.t += dt;
+
+  /* hız zamanla artar ama tavanı var */
+  G.speed = Math.min(6.2, 2.4 + G.t * 0.02 + G.age * 0.07);
+  var dx = G.speed * dt * 60;
+  G.dist += dx;
+
+  /* --- yaş ve bölüm --- */
+  var newAge = Math.min(18, G.dist / YEARS_PX);
+  G.age = newAge;
+
+  var si = 0;
+  for (var i = 0; i < STAGES.length; i++) if (G.age >= STAGES[i].from) si = i;
+  if (si !== G.stage) {
+    G.stage = si;
+    Audio2.level();
+    Audio2.setKey(si);
+    banner(stage().name);
+    G.bgProps.forEach(function (p) { p.e = pick(stage().far); });
+  }
+
+  if (G.age >= 18) { finishGame(); return; }
+
+  /* --- oyuncu fiziği --- */
+  player.vy += GRAVITY * dt;
+  player.y += player.vy * dt;
+  if (player.y >= GROUND - player.h) {
+    player.y = GROUND - player.h;
+    player.vy = 0;
+    player.jumps = 0;
+    player.onGround = true;
+  } else {
+    player.onGround = false;
+  }
+  player.runT += dt * (6 + G.speed);
+
+  if (G.invuln > 0) G.invuln -= dt;
+
+  /* --- dünya kaydırma --- */
+  G.spawnIn -= dx;
+  if (G.spawnIn <= 0) spawnGroup();
+
+  G.clouds.forEach(function (c) {
+    c.x -= dx * c.s * 0.25;
+    if (c.x < -60) { c.x = W + 40; c.y = rnd(70, 170); }
+  });
+  G.bgProps.forEach(function (p) {
+    p.x -= dx * p.s;
+    if (p.x < -50) { p.x = W + rnd(20, 140); p.e = pick(stage().far); }
+  });
+
+  /* --- toplanabilirler --- */
+  for (var a = G.items.length - 1; a >= 0; a--) {
+    var it = G.items[a];
+    it.x -= dx;
+    it.t += dt * 4;
+    if (it.x < -40) { G.items.splice(a, 1); continue; }
+
+    if (circleHitsPlayer(it)) {
+      G.items.splice(a, 1);
+      if (it.kind === "joy") {
+        G.happy += 5; G.joyCount++;
+        Audio2.star();
+        G.pops.push({ x: it.x, y: it.y, text: it.label + " +5", c: "#0a8a4a", life: 1.1 });
+      } else {
+        G.project += 2; G.projCount++;
+        Audio2.book();
+        G.pops.push({ x: it.x, y: it.y, text: it.label, c: "#2f6fe4", life: 1.1 });
+      }
+      EGStats.answer(true);
+      setHud();
+    }
+  }
+
+  /* --- engeller --- */
+  for (var b = G.blocks.length - 1; b >= 0; b--) {
+    var bl = G.blocks[b];
+    bl.x -= dx;
+    if (bl.x + bl.w < -20) { G.blocks.splice(b, 1); continue; }
+
+    if (G.invuln <= 0 && rectHitsPlayer(bl)) {
+      G.lives--; G.hitCount++;
+      G.invuln = 1.4;
+      Audio2.hit();
+      EGStats.answer(false);
+      G.pops.push({ x: bl.x, y: bl.y - 10, text: "Ayy!", c: "#d92c3c", life: 1 });
+      setHud();
+      if (G.lives <= 0) { failGame(); return; }
+    }
+  }
+
+  /* --- uçuşan yazılar --- */
+  for (var p2 = G.pops.length - 1; p2 >= 0; p2--) {
+    var po = G.pops[p2];
+    po.y -= 34 * dt; po.x -= dx; po.life -= dt;
+    if (po.life <= 0) G.pops.splice(p2, 1);
+  }
+
+  /* --- arada bir kurumsal espri --- */
+  G.toastIn -= dt;
+  if (G.toastIn <= 0) {
+    var t = pick(TOASTS);
+    toast(t[0], t[1]);
+    G.toastIn = rnd(13, 20);
+  }
+}
+
+/* çarpışma: oyuncuyu biraz küçük bir kutu sayıyoruz (affedici olsun) */
+function playerBox() {
+  return { x: player.x + 5, y: player.y + 5, w: player.w - 10, h: player.h - 8 };
+}
+function rectHitsPlayer(r) {
+  var p = playerBox();
+  return p.x < r.x + r.w - 4 && p.x + p.w > r.x + 4 && p.y < r.y + r.h && p.y + p.h > r.y + 2;
+}
+function circleHitsPlayer(c) {
+  var p = playerBox();
+  var cx = Math.max(p.x, Math.min(c.x, p.x + p.w));
+  var cy = Math.max(p.y, Math.min(c.y, p.y + p.h));
+  var dx = c.x - cx, dy = c.y - cy;
+  return dx * dx + dy * dy < (c.r + 6) * (c.r + 6);
+}
+
+/* ============================================================
+   8) ÇİZİM
+   ============================================================ */
+function draw() {
+  var st = stage();
+
+  /* gökyüzü */
+  ctx.fillStyle = st.sky;
+  ctx.fillRect(0, 0, W, H);
+
+  /* bulutlar */
+  ctx.fillStyle = "rgba(255,255,255,.85)";
+  G.clouds.forEach(function (c) {
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.r, 0, 7);
+    ctx.arc(c.x + c.r * 0.9, c.y + 4, c.r * 0.75, 0, 7);
+    ctx.arc(c.x - c.r * 0.9, c.y + 5, c.r * 0.7, 0, 7);
+    ctx.fill();
+  });
+
+  /* uzaktaki tepeler */
+  ctx.fillStyle = st.hill;
+  ctx.beginPath();
+  ctx.moveTo(0, GROUND);
+  for (var x = 0; x <= W; x += 20) {
+    ctx.lineTo(x, GROUND - 46 - Math.sin((x + G.dist * 0.18) / 70) * 20);
+  }
+  ctx.lineTo(W, GROUND); ctx.closePath(); ctx.fill();
+
+  /* arka plan objeleri (ev, ağaç, bina…) */
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  G.bgProps.forEach(function (p) {
+    ctx.globalAlpha = 0.65;
+    ctx.font = Math.round(24 + p.s * 26) + "px serif";
+    ctx.fillText(p.e, p.x, GROUND - 6);
+    ctx.globalAlpha = 1;
+  });
+
+  /* zemin */
+  ctx.fillStyle = st.ground;
+  ctx.fillRect(0, GROUND, W, H - GROUND);
+  ctx.fillStyle = "rgba(0,0,0,.14)";
+  ctx.fillRect(0, GROUND, W, 5);
+  /* yol çizgileri - hız hissi */
+  ctx.fillStyle = "rgba(255,255,255,.35)";
+  for (var d = -(G.dist % 60); d < W; d += 60) ctx.fillRect(d, GROUND + 22, 30, 5);
+
+  /* engeller */
+  G.blocks.forEach(function (b) {
+    ctx.font = Math.round(b.h + 8) + "px serif";
+    ctx.fillText(b.e, b.x + b.w / 2, b.y + b.h + 2);
+  });
+
+  /* toplanabilirler */
+  G.items.forEach(function (it) {
+    var bob = Math.sin(it.t) * 4;
+    /* arkasında parlayan halka: çocuk için "bunu al!" işareti */
+    ctx.beginPath();
+    ctx.fillStyle = it.kind === "joy" ? "rgba(255,210,63,.55)" : "rgba(47,111,228,.25)";
+    ctx.arc(it.x, it.y + bob, it.r + 6, 0, 7);
+    ctx.fill();
+    ctx.font = "26px serif";
+    ctx.fillText(it.e, it.x, it.y + bob + 9);
+    if (it.kind === "joy") {
+      ctx.font = "13px serif";
+      ctx.fillText("⭐", it.x + 12, it.y + bob - 8);
+    }
+  });
+
+  drawPlayer();
+
+  /* uçuşan yazılar */
+  ctx.font = "bold 12px 'Space Grotesk', sans-serif";
+  G.pops.forEach(function (p) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+    ctx.fillStyle = "#fff";
+    ctx.lineWidth = 3; ctx.strokeStyle = "#111";
+    ctx.strokeText(p.text, p.x, p.y);
+    ctx.fillStyle = p.c;
+    ctx.fillText(p.text, p.x, p.y);
+    ctx.globalAlpha = 1;
+  });
+}
+
+/* Karakter: basit şekillerden çizilmiş, yaşla birlikte büyüyen bir çocuk.
+   Her bölümde saç/çanta/boy değişir - ama hep aynı karakter. */
+function drawPlayer() {
+  if (G.invuln > 0 && Math.floor(G.invuln * 12) % 2 === 0) return;   // çarpınca yanıp söner
+
+  var st = G.stage;
+  var grow = 1 + st * 0.09;                 // yaş ilerledikçe büyür
+  var h = player.h * grow;
+  var w = player.w * grow;
+  var x = player.x + player.w / 2;
+  var y = player.y + player.h;              // ayak hizası
+  var legSwing = player.onGround ? Math.sin(player.runT) * 7 : 5;
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  /* gölge */
+  ctx.fillStyle = "rgba(0,0,0,.18)";
+  ctx.beginPath(); ctx.ellipse(0, 2, w * 0.45, 4, 0, 0, 7); ctx.fill();
+
+  /* bacaklar */
+  ctx.strokeStyle = "#2b3a67"; ctx.lineWidth = 5; ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-3, -h * 0.34); ctx.lineTo(-3 + legSwing, -1);
+  ctx.moveTo(3, -h * 0.34); ctx.lineTo(3 - legSwing, -1);
+  ctx.stroke();
+
+  /* sırt çantası (oyunun simgesi) */
+  ctx.fillStyle = "#e0453f";
+  ctx.fillRect(-w * 0.48, -h * 0.72, w * 0.3, h * 0.36);
+
+  /* gövde */
+  ctx.fillStyle = ["#ffd23f", "#2dd881", "#2f6fe4", "#a78bfa", "#ff8a3d"][st];
+  ctx.strokeStyle = "#111"; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(-w * 0.26, -h * 0.74, w * 0.52, h * 0.42, 6)
+                : ctx.rect(-w * 0.26, -h * 0.74, w * 0.52, h * 0.42);
+  ctx.fill(); ctx.stroke();
+
+  /* kollar */
+  ctx.strokeStyle = "#f6c9a0"; ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-w * 0.24, -h * 0.62); ctx.lineTo(-w * 0.24 - legSwing * 0.6, -h * 0.42);
+  ctx.moveTo(w * 0.24, -h * 0.62); ctx.lineTo(w * 0.24 + legSwing * 0.6, -h * 0.42);
+  ctx.stroke();
+
+  /* kafa */
+  ctx.fillStyle = "#ffd9b8"; ctx.strokeStyle = "#111"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, -h * 0.86, h * 0.16, 0, 7); ctx.fill(); ctx.stroke();
+
+  /* saç */
+  ctx.fillStyle = "#3a2a1d";
+  ctx.beginPath();
+  ctx.arc(0, -h * 0.9, h * 0.163, Math.PI, 0);
+  ctx.fill();
+
+  /* yüz */
+  ctx.fillStyle = "#111";
+  ctx.beginPath(); ctx.arc(-h * 0.055, -h * 0.87, 1.7, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(h * 0.055, -h * 0.87, 1.7, 0, 7); ctx.fill();
+  ctx.strokeStyle = "#111"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(0, -h * 0.845, h * 0.05, 0.25, Math.PI - 0.25); ctx.stroke();
+
+  /* son bölümde küçük bir mezuniyet şapkası */
+  if (st === 4) {
+    ctx.fillStyle = "#111";
+    ctx.fillRect(-h * 0.2, -h * 1.05, h * 0.4, 3);
+    ctx.fillRect(-h * 0.08, -h * 1.09, h * 0.16, 5);
+  }
+  ctx.restore();
+}
+
+/* ============================================================
+   9) ANA DÖNGÜ
+   ============================================================ */
+var lastT = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  var dt = (now - lastT) / 1000;
+  lastT = now;
+  if (!(dt > 0)) return;
+  if (dt > 0.05) dt = 0.05;               // sekme arka plandayken sıçramasın
+
+  if (G.mode === "play") update(dt);
+  draw();
+}
+
+/* ============================================================
+   10) EKRAN GEÇİŞLERİ
+   ============================================================ */
+function startGame() {
+  Audio2.unlock();
+  resetWorld();
+  var st = STAGES[0];
+  $("introEmoji").textContent = st.intro[0];
+  $("introTitle").textContent = st.intro[1];
+  $("introText").textContent = st.intro[2];
+  G.mode = "intro";
+  showScreen("scrIntro");
+}
+
+function beginRun() {
+  hideScreens();
+  G.mode = "play";
+  lastT = performance.now();
+  if ($("btnMusic").classList.contains("off") === false) Audio2.startMusic();
+  toast("Proje başlatıldı", "Hedef: en iyi kreşi bulmak 🍼");
+}
+
+function togglePause() {
+  if (G.mode === "play") { G.mode = "pause"; showScreen("scrPause"); Audio2.stopMusic(); }
+  else if (G.mode === "pause") { G.mode = "play"; hideScreens(); lastT = performance.now();
+                                 if (!$("btnMusic").classList.contains("off")) Audio2.startMusic(); }
+}
+
+function failGame() {
+  G.mode = "fail";
+  Audio2.stopMusic();
+  Audio2.over();
+  $("failText").textContent = "⭐ " + G.happy + " mutluluk, 📚 " + G.project + " puan topladın.";
+  showScreen("scrFail");
+  saveRound();
+}
+
+function finishGame() {
+  G.mode = "done";
+  G.age = 18; setHud();          // HUD'da 18 yaş görünsün
+  Audio2.stopMusic();
+  Audio2.level();
+  EG.confetti(120);
+
+  /* Sonuç çubukları - 0..100 arası ölçeklenir */
+  /* Katsayılar tam bir oyun (~2.5 dk) sonunda 0-100 aralığını dolduracak
+     şekilde ayarlandı; değiştirmek isterseniz tek yer burası. */
+  var learn = Math.min(100, Math.round(G.projCount * 1.2));
+  var happy = Math.min(100, Math.round(G.joyCount * 2.2));
+  var fun = Math.min(100, Math.round(G.joyCount * 1.8 + 20 - G.hitCount * 4));
+  /* boş zaman: ne kadar çok aktivite, o kadar az boş zaman */
+  var free = Math.max(0, Math.min(100, 100 - G.projCount * 1.2));
+
+  setBar("bHappy", happy); setBar("bLearn", learn);
+  setBar("bFun", Math.max(0, fun)); setBar("bFree", free);
+
+  /* mizahi değerlendirme: mesajı oyun kendisi söylesin */
+  var v, j;
+  if (learn >= 60 && happy < 45) {
+    v = "Harika! Çocuğunuz optimize edildi. 📈";
+    j = "Mutluluk modülü bir sonraki güncellemeye bırakıldı.";
+  } else if (happy >= 60 && learn < 45) {
+    v = "Çocuğunuz çok eğlendi! 🎈";
+    j = "Ancak 17 sertifika eksik kaldı.";
+  } else if (happy >= 45 && learn >= 40) {
+    v = "Çocuğunuzun bir çocukluk geçirdiği tespit edildi. 🌳";
+    j = "Bu durum program dışıdır ama kimse şikâyetçi değil.";
+  } else {
+    v = "Proje tamamlandı. ✅";
+    j = "Rapor arşive kaldırıldı.";
+  }
+  $("doneVerdict").textContent = v;
+  $("doneJoke").textContent = j + " · Yeni proje hazırlanıyor: TORUN 😄";
+
+  showScreen("scrDone");
+  saveRound();
+}
+
+function setBar(id, v) {
+  var el = $(id);
+  el.style.width = "0%";
+  setTimeout(function () { el.style.width = v + "%"; }, 60);
+}
+
+/* ilerleme kaydı: sitenin ortak istatistik katmanı */
+function saveRound() {
+  EGStats.finishRound("proje", G.happy + G.project, G.joyCount + G.projCount);
+}
+
+/* ============================================================
+   11) DÜĞMELER
+   ============================================================ */
+$("btnPlay").addEventListener("click", startGame);
+$("btnGo").addEventListener("click", beginRun);
+$("btnHow").addEventListener("click", function () { showScreen("scrHow"); });
+$("btnHowOk").addEventListener("click", function () { showScreen("scrMenu"); });
+$("btnPause").addEventListener("click", togglePause);
+$("btnResume").addEventListener("click", togglePause);
+$("btnQuit").addEventListener("click", function () { G.mode = "menu"; showScreen("scrMenu"); });
+$("btnRetry").addEventListener("click", startGame);
+$("btnFailMenu").addEventListener("click", function () { G.mode = "menu"; showScreen("scrMenu"); });
+$("btnAgain").addEventListener("click", startGame);
+
+$("btnSfx").addEventListener("click", function () {
+  var off = this.classList.toggle("off");
+  Audio2.setSfx(!off);
+  this.textContent = off ? "🔇" : "🔊";
+});
+
+$("btnMusic").addEventListener("click", function () {
+  var off = this.classList.toggle("off");
+  Audio2.setMusic(!off);
+  this.textContent = off ? "🎶" : "🎵";
+});
+
+/* sekme arkaya alınırsa oyunu durdur (ve müziği sustur) */
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden && G.mode === "play") togglePause();
+});
+
+/* ============================================================
+   12) ÖLÇEKLEME — her ekranda net görüntü
+   ============================================================ */
+function resize() {
+  var rect = cv.getBoundingClientRect();
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(rect.width * dpr);
+  cv.height = Math.round(rect.height * dpr);
+  /* mantıksal 360x560 kutusunu gerçek piksellere ölçekle */
+  ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  ctx.textAlign = "center";
+}
+window.addEventListener("resize", resize);
+resize();
+
+resetWorld();
+showScreen("scrMenu");
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

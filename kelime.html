@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelime Tamamlama — Enes &amp; Fatih Mert Gaming</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔤</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"></div>
+
+  <!-- ---------- 1. ekran: seviye seçimi ---------- -->
+  <div class="card" id="setupCard">
+    <div class="mascot-row" style="justify-content:flex-start">
+      <img class="mascot" src="assets/img/mascot.svg" alt="Maskot" style="width:86px">
+      <div class="speech">Eksik harfleri yerine koyalım!</div>
+    </div>
+
+    <h3 class="mt">Seviye seç</h3>
+    <div class="levels" id="levelBox">
+      <button class="level on" data-lv="1"><span class="lv-e">🐣</span>Kolay<small>kısa kelime · 1 boşluk</small></button>
+      <button class="level" data-lv="2"><span class="lv-e">🐥</span>Orta<small>2 boşluk</small></button>
+      <button class="level" data-lv="3"><span class="lv-e">🦅</span>Zor<small>uzun kelime · 3 boşluk</small></button>
+    </div>
+
+    <p class="footer-note" style="margin-top:18px">
+      Harfi parmağınla boşluğun üzerine sürükle — ya da önce harfe, sonra boşluğa dokun.
+      Her turda <b>3 canın</b> var ❤️❤️❤️
+    </p>
+
+    <div class="center mt">
+      <button class="btn green" id="startBtn" style="font-size:20px;padding:16px 34px">Başla! 🚀</button>
+    </div>
+  </div>
+
+  <!-- ---------- 2. ekran: oyun ---------- -->
+  <div id="gameWrap" hidden>
+    <div class="hud">
+      <span class="pill">⭐ Puan: <b id="score">0</b></span>
+      <span class="pill">❓ <b id="qnum">1</b> / <b id="qtotal">10</b></span>
+      <span class="pill hearts" id="hearts">❤️❤️❤️</span>
+      <span class="pill">⏱️ <b id="clock">00:00</b></span>
+      <span class="bar"><i id="progress"></i></span>
+    </div>
+
+    <div class="card">
+      <div class="mascot-row" style="justify-content:flex-start">
+        <img class="mascot" id="mascot" src="assets/img/mascot.svg" alt="Maskot" style="width:86px">
+        <div class="speech" id="speech">Bu kelime ne olabilir?</div>
+      </div>
+
+      <div class="prompt mt">
+        <div class="big-emoji" id="emoji">🔤</div>
+        <p class="hint" id="topic"></p>
+      </div>
+
+      <div class="word-slots" id="slots"></div>
+      <div class="letter-bank" id="bank"></div>
+
+      <div class="center mt">
+        <button class="btn ghost sm" id="hintBtn">💡 Bir harf aç (−5 puan)</button>
+        <button class="btn ghost sm" id="sayBtn" hidden>🔊 Tekrar söyle</button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+
+      <div class="center mt" id="endBox" hidden>
+        <h2 id="endTitle"></h2>
+        <p id="endText"></p>
+        <button class="btn green" id="againBtn">Tekrar oyna 🔁</button>
+        <button class="btn yellow" id="levelBtn2">Seviye değiştir ⚙️</button>
+        <a class="btn ghost" href="hub.html">Oyun menüsü</a>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">Enes &amp; Fatih Mert için ❤️ ile yapıldı</p>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+EG.Auth.guard();
+EG.buildTopbar("Kelime Tamamlama 🔤", "Eksik harfleri yerine koy", "hub.html", { tr: true });
+EGStats.beginSession("kelime");
+
+EG.setLines({
+  good: ["Aferin!", "Buldun! 🎉", "Süper!", "Çok iyi!", "Bravo!", "Böyle devam!"],
+  bad:  ["Bu harf değil!", "Tekrar dene!", "Olsun, devam 💪", "Başka bir harf dene!"],
+  idle: ["Bu kelime ne olabilir?", "Hazır mısın?", "Yapabilirsin!"]
+});
+
+var TOTAL = 10;
+var LIVES = 3;
+var ALPHABET = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
+var $ = function (id) { return document.getElementById(id); };
+
+var level = 1;
+var round = 0, score = 0, lives = LIVES;
+var current = null;          // { word, emoji, topic, holes: [index...] }
+var letters = [];            // harf havuzu: { ch, used }
+var picked = null;           // dokunarak seçilen harf (bank index)
+var locked = false;
+
+/* ---------- seviye seçimi ---------- */
+$("levelBox").addEventListener("click", function (e) {
+  var b = e.target.closest(".level");
+  if (!b) return;
+  Array.prototype.forEach.call(this.querySelectorAll(".level"), function (x) { x.classList.remove("on"); });
+  b.classList.add("on");
+  level = Number(b.dataset.lv);
+  EG.Sound.init();
+});
+
+/* ---------- kelime seçimi ---------- */
+function poolFor(lv) {
+  var all = window.TR_WORDS || [];
+  var pool = all.filter(function (w) {
+    var n = w.word.length;
+    if (lv === 1) return n >= 2 && n <= 5;
+    if (lv === 2) return n >= 5 && n <= 7;
+    return n >= 6;
+  });
+  return pool.length >= 4 ? pool : all;
+}
+
+function holesFor(word, lv) {
+  var wanted = Math.min(lv, Math.max(1, word.length - 1));
+  var idx = [];
+  for (var i = 0; i < word.length; i++) idx.push(i);
+  return EG.shuffle(idx).slice(0, wanted).sort(function (a, b) { return a - b; });
+}
+
+function makeQuestion() {
+  var w = EG.shuffle(poolFor(level))[0];
+  var holes = holesFor(w.word, level);
+
+  /* havuz: eksik harfler + birkaç şaşırtmaca */
+  var needed = holes.map(function (i) { return w.word[i]; });
+  var extras = EG.shuffle(ALPHABET.filter(function (c) { return needed.indexOf(c) < 0; }))
+                 .slice(0, level === 1 ? 3 : 4);
+  letters = EG.shuffle(needed.concat(extras)).map(function (c) { return { ch: c, used: false }; });
+
+  return { word: w.word, emoji: w.emoji, topic: w.topic, holes: holes, filled: {} };
+}
+
+/* ---------- çizim ---------- */
+function drawSlots() {
+  var box = $("slots");
+  box.innerHTML = "";
+  current.word.split("").forEach(function (ch, i) {
+    var d = document.createElement("div");
+    var isHole = current.holes.indexOf(i) >= 0;
+    d.className = "slot " + (isHole ? "hole" : "fixed");
+    if (isHole) {
+      d.dataset.hole = i;
+      d.textContent = current.filled[i] || "";
+      if (current.filled[i]) d.classList.add("filled");
+      d.addEventListener("click", function () {
+        if (locked || picked === null) return;
+        tryPlace(picked, i);
+      });
+    } else {
+      d.textContent = ch;
+    }
+    box.appendChild(d);
+  });
+  markActiveHole();
+}
+
+function markActiveHole() {
+  var next = firstEmptyHole();
+  Array.prototype.forEach.call($("slots").querySelectorAll(".hole"), function (el) {
+    el.classList.toggle("active", picked !== null && Number(el.dataset.hole) === next);
+  });
+}
+
+function firstEmptyHole() {
+  for (var i = 0; i < current.holes.length; i++) {
+    if (!current.filled[current.holes[i]]) return current.holes[i];
+  }
+  return -1;
+}
+
+function drawBank() {
+  var box = $("bank");
+  box.innerHTML = "";
+  letters.forEach(function (L, i) {
+    var b = document.createElement("button");
+    b.className = "letter" + (L.used ? " used" : "") + (picked === i ? " dragging" : "");
+    b.type = "button";
+    b.textContent = L.ch;
+    b.dataset.idx = i;
+    box.appendChild(b);
+  });
+}
+
+/* ---------- harf yerleştirme ---------- */
+function tryPlace(bankIdx, holeIdx) {
+  if (locked) return;
+  var L = letters[bankIdx];
+  if (!L || L.used) return;
+  if (holeIdx < 0 || current.filled[holeIdx]) return;
+
+  var want = current.word[holeIdx];
+  var slot = $("slots").querySelector('[data-hole="' + holeIdx + '"]');
+
+  if (L.ch === want) {
+    current.filled[holeIdx] = L.ch;
+    L.used = true;
+    picked = null;
+    EG.Sound.good();
+    drawSlots(); drawBank();
+    slot = $("slots").querySelector('[data-hole="' + holeIdx + '"]');
+    if (slot) slot.classList.add("good");
+    if (firstEmptyHole() === -1) setTimeout(wordDone, 450);
+  } else {
+    picked = null;
+    lives--;
+    updateHearts();
+    EG.Sound.bad();
+    EG.react("bad");
+    EGStats.answer(false);
+    if (slot) {
+      slot.classList.add("bad");
+      setTimeout(function () { slot.classList.remove("bad"); }, 500);
+    }
+    $("feedback").textContent = "Bu harf buraya olmadı.";
+    $("feedback").className = "feedback bad";
+    drawBank(); markActiveHole();
+    if (lives <= 0) { locked = true; setTimeout(gameOver, 700); }
+  }
+}
+
+function updateHearts() {
+  $("hearts").textContent = "❤️".repeat(Math.max(0, lives)) + "🖤".repeat(Math.max(0, LIVES - lives));
+}
+
+function wordDone() {
+  locked = true;
+  score += 10;
+  $("score").textContent = score;
+  $("feedback").textContent = "Doğru: " + current.word + " " + current.emoji;
+  $("feedback").className = "feedback good";
+  EG.Sound.win();
+  EG.react("good");
+  EGStats.answer(true);
+  EG.speak(current.word, "tr-TR");
+  setTimeout(nextWord, 1600);
+}
+
+/* ---------- oyun akışı ---------- */
+function startGame() {
+  round = 0; score = 0; lives = LIVES;
+  $("setupCard").hidden = true;
+  $("gameWrap").hidden = false;
+  $("score").textContent = "0";
+  $("qtotal").textContent = TOTAL;
+  $("endBox").hidden = true;
+  $("slots").hidden = false;
+  $("bank").hidden = false;
+  $("hintBtn").hidden = false;
+  updateHearts();
+  nextWord();
+}
+
+function nextWord() {
+  if (round >= TOTAL) return finish(true);
+  round++;
+  locked = false;
+  picked = null;
+  $("qnum").textContent = round;
+  $("progress").style.width = ((round - 1) / TOTAL * 100) + "%";
+  $("feedback").textContent = "";
+  $("feedback").className = "feedback";
+
+  current = makeQuestion();
+  $("emoji").textContent = current.emoji;
+  $("emoji").style.animation = "none"; void $("emoji").offsetWidth; $("emoji").style.animation = "";
+  $("topic").textContent = "Konu: " + current.topic + " · " + current.word.length + " harf";
+  drawSlots();
+  drawBank();
+  EG.react("idle");
+}
+
+function gameOver() { finish(false); }
+
+function finish(completed) {
+  locked = true;
+  $("progress").style.width = "100%";
+  $("slots").hidden = true;
+  $("bank").hidden = true;
+  $("hintBtn").hidden = true;
+  $("feedback").textContent = "";
+  $("emoji").textContent = completed ? (score >= 80 ? "🏆" : "🎉") : "😿";
+  $("topic").textContent = "";
+
+  var isBest = EGStats.finishRound("kelime", score, TOTAL);
+  $("endBox").hidden = false;
+  $("endTitle").textContent = completed ? score + " puan aldın!" : "Canların bitti 💔";
+  $("endText").textContent = isBest
+    ? "Bu yeni bir rekor! 🌟"
+    : "Puanın " + score + ". En iyi puanın: " + EG.Scores.get("kelime") + ".";
+  EG.Sound.win();
+  EG.react("good", isBest ? "Yeni rekor! 🏆" : "İyi oyundu!");
+  if (completed && score >= 70) EG.confetti();
+}
+
+/* ---------- ipucu ---------- */
+$("hintBtn").addEventListener("click", function () {
+  if (locked) return;
+  var h = firstEmptyHole();
+  if (h < 0) return;
+  var want = current.word[h];
+  var idx = -1;
+  letters.forEach(function (L, i) { if (idx < 0 && !L.used && L.ch === want) idx = i; });
+  if (idx < 0) return;
+  score = Math.max(0, score - 5);
+  $("score").textContent = score;
+  picked = idx;
+  tryPlace(idx, h);
+});
+
+/* ---------- dokunma ve sürükleme (fare + parmak, tek kod) ---------- */
+var ghost = null, dragFrom = null;
+
+function bankButtonAt(target) {
+  var b = target && target.closest ? target.closest(".letter") : null;
+  return b && !b.classList.contains("used") ? b : null;
+}
+
+$("bank").addEventListener("pointerdown", function (e) {
+  if (locked) return;
+  var b = bankButtonAt(e.target);
+  if (!b) return;
+  EG.Sound.init();
+  dragFrom = Number(b.dataset.idx);
+  picked = dragFrom;
+  b.classList.add("dragging");
+  markActiveHole();
+
+  ghost = document.createElement("div");
+  ghost.className = "drag-ghost";
+  ghost.textContent = b.textContent;
+  document.body.appendChild(ghost);
+  moveGhost(e.clientX, e.clientY);
+  try { b.setPointerCapture(e.pointerId); } catch (err) { /* eski tarayıcı */ }
+});
+
+function moveGhost(x, y) {
+  if (!ghost) return;
+  ghost.style.left = x + "px";
+  ghost.style.top = (y - 44) + "px";   // parmağın biraz üstünde dursun
+}
+
+/* Parmağın altına ya da harfin (hayalet karonun) altına denk gelen boşluk -
+   ikisini de kabul ediyoruz, küçük ekranda tutturması kolay olsun diye. */
+function hoveredHole(x, y) {
+  var points = [[x, y - 44], [x, y]];
+  for (var i = 0; i < points.length; i++) {
+    var el = document.elementFromPoint(points[i][0], points[i][1]);
+    var hole = el && el.closest ? el.closest(".hole") : null;
+    if (hole && !hole.classList.contains("filled")) return hole;
+  }
+  return null;
+}
+
+$("bank").addEventListener("pointermove", function (e) {
+  if (!ghost) return;
+  e.preventDefault();
+  moveGhost(e.clientX, e.clientY);
+  var hole = hoveredHole(e.clientX, e.clientY);
+  Array.prototype.forEach.call($("slots").querySelectorAll(".hole"), function (el) {
+    el.classList.toggle("over", el === hole);
+  });
+});
+
+function endDrag(e) {
+  if (!ghost) return;
+  var hole = hoveredHole(e.clientX, e.clientY);
+  ghost.remove(); ghost = null;
+  Array.prototype.forEach.call($("slots").querySelectorAll(".hole"), function (el) {
+    el.classList.remove("over");
+  });
+  var from = dragFrom;
+  dragFrom = null;
+
+  if (hole) {
+    tryPlace(from, Number(hole.dataset.hole));
+  } else {
+    /* boşluğun dışına bırakıldı: harf seçili kalsın, sonra boşluğa dokunulabilir */
+    drawBank(); markActiveHole();
+  }
+}
+
+$("bank").addEventListener("pointerup", endDrag);
+$("bank").addEventListener("pointercancel", function () {
+  if (ghost) { ghost.remove(); ghost = null; }
+  dragFrom = null;
+  drawBank(); markActiveHole();
+});
+
+/* sürüklemeden sadece dokunmak da çalışsın: harfe dokun, ilk boşluğa gitsin */
+$("bank").addEventListener("click", function (e) {
+  var b = bankButtonAt(e.target);
+  if (!b || locked) return;
+  if (!document.contains(b)) return;   // sürükleme sırasında yeniden çizilmiş olabilir
+  var idx = Number(b.dataset.idx);
+  picked = idx;
+  drawBank();
+  markActiveHole();
+});
+
+/* klavyeden de yazılabilsin (bilgisayarda) */
+document.addEventListener("keydown", function (e) {
+  if ($("gameWrap").hidden || locked || !e.key || e.key.length !== 1) return;
+  var ch = e.key.toLocaleUpperCase("tr");
+  var idx = -1;
+  letters.forEach(function (L, i) { if (idx < 0 && !L.used && L.ch === ch) idx = i; });
+  if (idx >= 0) tryPlace(idx, firstEmptyHole());
+});
+
+$("startBtn").addEventListener("click", startGame);
+$("againBtn").addEventListener("click", startGame);
+$("levelBtn2").addEventListener("click", function () {
+  $("gameWrap").hidden = true;
+  $("setupCard").hidden = false;
+});
+
+EG.startTimer("clock");
+</script>
+</body>
+</html>

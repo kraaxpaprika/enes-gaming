@@ -120,3 +120,107 @@ window.COUNTRIES = [
 window.CONTINENTS = [
   "Europe", "Asia", "Africa", "North America", "South America", "Oceania"
 ];
+
+/* ==================================================================
+   Türkçe kelimeler — "Kelime Tamamlama" oyunu için.
+   Kelimeler BÜYÜK harfle yazılır (Türkçe İ/I karışmasın diye).
+   Yeni kelime eklemek için listenin sonuna bir satır ekleyin:
+     { emoji: "🐍", word: "YILAN", topic: "Hayvanlar" }
+   seviye: kelime uzunluğundan otomatik hesaplanır.
+   ================================================================== */
+window.TR_WORDS = [
+  // Hayvanlar
+  { emoji: "🐶", word: "KÖPEK",     topic: "Hayvanlar" },
+  { emoji: "🐱", word: "KEDİ",      topic: "Hayvanlar" },
+  { emoji: "🐴", word: "AT",        topic: "Hayvanlar" },
+  { emoji: "🐘", word: "FİL",       topic: "Hayvanlar" },
+  { emoji: "🦁", word: "ASLAN",     topic: "Hayvanlar" },
+  { emoji: "🐻", word: "AYI",       topic: "Hayvanlar" },
+  { emoji: "🐸", word: "KURBAĞA",   topic: "Hayvanlar" },
+  { emoji: "🐟", word: "BALIK",     topic: "Hayvanlar" },
+  { emoji: "🐦", word: "KUŞ",       topic: "Hayvanlar" },
+  { emoji: "🐝", word: "ARI",       topic: "Hayvanlar" },
+  { emoji: "🦋", word: "KELEBEK",   topic: "Hayvanlar" },
+  { emoji: "🐢", word: "KAPLUMBAĞA",topic: "Hayvanlar" },
+  { emoji: "🐑", word: "KOYUN",     topic: "Hayvanlar" },
+  { emoji: "🐄", word: "İNEK",      topic: "Hayvanlar" },
+  { emoji: "🐔", word: "TAVUK",     topic: "Hayvanlar" },
+  { emoji: "🦆", word: "ÖRDEK",     topic: "Hayvanlar" },
+  { emoji: "🐺", word: "KURT",      topic: "Hayvanlar" },
+  { emoji: "🦊", word: "TİLKİ",     topic: "Hayvanlar" },
+  { emoji: "🐍", word: "YILAN",     topic: "Hayvanlar" },
+  { emoji: "🐜", word: "KARINCA",   topic: "Hayvanlar" },
+
+  // Meyve & sebze
+  { emoji: "🍎", word: "ELMA",      topic: "Meyveler" },
+  { emoji: "🍐", word: "ARMUT",     topic: "Meyveler" },
+  { emoji: "🍌", word: "MUZ",       topic: "Meyveler" },
+  { emoji: "🍉", word: "KARPUZ",    topic: "Meyveler" },
+  { emoji: "🍇", word: "ÜZÜM",      topic: "Meyveler" },
+  { emoji: "🍓", word: "ÇİLEK",     topic: "Meyveler" },
+  { emoji: "🍒", word: "KİRAZ",     topic: "Meyveler" },
+  { emoji: "🍊", word: "PORTAKAL",  topic: "Meyveler" },
+  { emoji: "🍋", word: "LİMON",     topic: "Meyveler" },
+  { emoji: "🍑", word: "ŞEFTALİ",   topic: "Meyveler" },
+  { emoji: "🥕", word: "HAVUÇ",     topic: "Sebzeler" },
+  { emoji: "🥔", word: "PATATES",   topic: "Sebzeler" },
+  { emoji: "🍅", word: "DOMATES",   topic: "Sebzeler" },
+  { emoji: "🧅", word: "SOĞAN",     topic: "Sebzeler" },
+  { emoji: "🥒", word: "SALATALIK", topic: "Sebzeler" },
+  { emoji: "🌽", word: "MISIR",     topic: "Sebzeler" },
+
+  // Ev & okul
+  { emoji: "🏠", word: "EV",        topic: "Ev" },
+  { emoji: "🚪", word: "KAPI",      topic: "Ev" },
+  { emoji: "🪟", word: "PENCERE",   topic: "Ev" },
+  { emoji: "🪑", word: "SANDALYE",  topic: "Ev" },
+  { emoji: "🛏️", word: "YATAK",     topic: "Ev" },
+  { emoji: "🥄", word: "KAŞIK",     topic: "Ev" },
+  { emoji: "🍴", word: "ÇATAL",     topic: "Ev" },
+  { emoji: "🥛", word: "SÜT",       topic: "Ev" },
+  { emoji: "🍞", word: "EKMEK",     topic: "Ev" },
+  { emoji: "🧀", word: "PEYNİR",    topic: "Ev" },
+  { emoji: "📚", word: "KİTAP",     topic: "Okul" },
+  { emoji: "✏️", word: "KALEM",     topic: "Okul" },
+  { emoji: "📒", word: "DEFTER",    topic: "Okul" },
+  { emoji: "🎒", word: "ÇANTA",     topic: "Okul" },
+  { emoji: "🏫", word: "OKUL",      topic: "Okul" },
+  { emoji: "✂️", word: "MAKAS",     topic: "Okul" },
+  { emoji: "📏", word: "CETVEL",    topic: "Okul" },
+
+  // Doğa
+  { emoji: "☀️", word: "GÜNEŞ",     topic: "Doğa" },
+  { emoji: "🌙", word: "AY",        topic: "Doğa" },
+  { emoji: "⭐", word: "YILDIZ",    topic: "Doğa" },
+  { emoji: "☁️", word: "BULUT",     topic: "Doğa" },
+  { emoji: "🌧️", word: "YAĞMUR",    topic: "Doğa" },
+  { emoji: "❄️", word: "KAR",       topic: "Doğa" },
+  { emoji: "🌊", word: "DENİZ",     topic: "Doğa" },
+  { emoji: "🌳", word: "AĞAÇ",      topic: "Doğa" },
+  { emoji: "🌷", word: "LALE",      topic: "Doğa" },
+  { emoji: "🌹", word: "GÜL",       topic: "Doğa" },
+  { emoji: "⛰️", word: "DAĞ",       topic: "Doğa" },
+  { emoji: "🔥", word: "ATEŞ",      topic: "Doğa" },
+
+  // Taşıtlar
+  { emoji: "🚗", word: "ARABA",     topic: "Taşıtlar" },
+  { emoji: "🚌", word: "OTOBÜS",    topic: "Taşıtlar" },
+  { emoji: "🚲", word: "BİSİKLET",  topic: "Taşıtlar" },
+  { emoji: "✈️", word: "UÇAK",      topic: "Taşıtlar" },
+  { emoji: "🚢", word: "GEMİ",      topic: "Taşıtlar" },
+  { emoji: "🚂", word: "TREN",      topic: "Taşıtlar" },
+  { emoji: "🚁", word: "HELİKOPTER",topic: "Taşıtlar" },
+
+  // Vücut & aile
+  { emoji: "👁️", word: "GÖZ",       topic: "Vücudumuz" },
+  { emoji: "👂", word: "KULAK",     topic: "Vücudumuz" },
+  { emoji: "👃", word: "BURUN",     topic: "Vücudumuz" },
+  { emoji: "✋", word: "EL",        topic: "Vücudumuz" },
+  { emoji: "🦶", word: "AYAK",      topic: "Vücudumuz" },
+  { emoji: "🦷", word: "DİŞ",       topic: "Vücudumuz" },
+  { emoji: "👩", word: "ANNE",      topic: "Ailem" },
+  { emoji: "👨", word: "BABA",      topic: "Ailem" },
+  { emoji: "👶", word: "BEBEK",     topic: "Ailem" },
+  { emoji: "👵", word: "BABAANNE",  topic: "Ailem" },
+  { emoji: "👦", word: "KARDEŞ",    topic: "Ailem" }
+];

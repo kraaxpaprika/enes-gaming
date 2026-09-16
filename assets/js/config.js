@@ -5,6 +5,16 @@ window.GAME_CONFIG = {
   // Player name shown all over the site.
   playerName: "Enes & Fatih Mert",
 
+  // Who can play. After the password, the child picks one of these.
+  // Progress (scores, play time) is kept separately for every player,
+  // so you can see who played what and for how long.
+  // To add someone, copy a line and give it a new "id".
+  players: [
+    { id: "enes",  name: "Enes",       emoji: "🦁" },
+    { id: "fatih", name: "Fatih Mert", emoji: "🐯" },
+    { id: "yegen", name: "Yeğenim",    emoji: "🐣" }
+  ],
+
   // Login password. Base64 so it is not readable at a glance.
   // Current password: 1031
   // To change it, open the browser console and run:  btoa("newpassword")
