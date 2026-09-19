@@ -91,6 +91,14 @@
       <span class="btn green">Oyna</span>
       <div class="mini-stats">Rekor <b id="best-kelime">0</b> · <b id="plays-kelime">0</b> oyun · <b id="time-kelime">0s</b></div>
     </a>
+
+    <a class="game-card c-futbol" href="futbol.html">
+      <div class="emoji">⚽</div>
+      <h2>Futbol Kulüpleri</h2>
+      <p>Bu arma hangi takımın? Süper Lig, Premier League, Serie A, La Liga. 🇹🇷</p>
+      <span class="btn green">Oyna</span>
+      <div class="mini-stats">Rekor <b id="best-futbol">0</b> · <b id="plays-futbol">0</b> oyun · <b id="time-futbol">0s</b></div>
+    </a>
   </div>
 
   <p class="footer-note">Made with ❤️ for Enes &amp; Fatih Mert</p>
@@ -99,6 +107,18 @@
 <script src="assets/js/config.js"></script>
 <script src="assets/js/stats.js"></script>
 <script src="assets/js/app.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-database.js"></script>
+<script src="assets/js/firebase.init.js"></script>
+<script>
+  // Initialize Firebase sync on page load
+  const uid = localStorage.getItem("eg_player") || "guest";
+  if (uid !== "guest") {
+    window.firebaseSync.syncPlayerDataToFirebase();
+    window.firebaseSync.listenForFirebaseUpdates();
+  }
+</script>
 <script>
 EG.Auth.guard();
 var me = EG.Players.current();
@@ -113,7 +133,7 @@ $("t-plays").textContent = t.plays;
 $("t-acc").textContent = t.accuracy + "%";
 $("t-streak").textContent = EGStats.streak();
 
-["word", "flag", "map", "turkey", "math", "kelime", "proje"].forEach(function (k) {
+["word", "flag", "map", "turkey", "math", "kelime", "proje", "futbol"].forEach(function (k) {
   var g = d.games[k] || { best: 0, plays: 0, timeMs: 0 };
   $("best-" + k).textContent = g.best;
   $("plays-" + k).textContent = g.plays;

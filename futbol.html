@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Futbol Kulüpleri — Enes &amp; Fatih Mert Gaming</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"></div>
+
+  <!-- ---------- 1. ekran: lig seçimi ---------- -->
+  <div class="card" id="setupCard">
+    <div class="mascot-row" style="justify-content:flex-start">
+      <img class="mascot" src="assets/img/mascot.svg" alt="Maskot" style="width:86px">
+      <div class="speech">Bu logo hangi takımın?</div>
+    </div>
+
+    <h3 class="mt">Hangi liglerden sorayım?</h3>
+    <div class="levels" id="leagueBox">
+      <button class="level on" data-league="all"><span class="lv-e">🌍</span>Tümü<small>4 lig karışık</small></button>
+      <button class="level" data-league="Süper Lig"><span class="lv-e">🇹🇷</span>Süper Lig<small>Türkiye</small></button>
+      <button class="level" data-league="Premier League"><span class="lv-e">🏴</span>Premier League<small>İngiltere</small></button>
+      <button class="level" data-league="Serie A"><span class="lv-e">🇮🇹</span>Serie A<small>İtalya</small></button>
+      <button class="level" data-league="La Liga"><span class="lv-e">🇪🇸</span>La Liga<small>İspanya</small></button>
+    </div>
+
+    <div class="center mt">
+      <button class="btn green" id="startBtn" style="font-size:20px;padding:16px 34px">Başla! 🚀</button>
+    </div>
+  </div>
+
+  <!-- ---------- 2. ekran: oyun ---------- -->
+  <div id="gameWrap" hidden>
+    <div class="hud">
+      <span class="pill">⭐ Puan: <b id="score">0</b></span>
+      <span class="pill">❓ <b id="qnum">1</b> / <b id="qtotal">10</b></span>
+      <span class="pill">🏆 Rekor: <b id="best">0</b></span>
+      <span class="pill">⏱️ <b id="clock">00:00</b></span>
+      <span class="bar"><i id="progress"></i></span>
+    </div>
+
+    <div class="card">
+      <div class="mascot-row" style="justify-content:flex-start">
+        <img class="mascot" id="mascot" src="assets/img/mascot.svg" alt="Maskot" style="width:86px">
+        <div class="speech" id="speech">Bakalım, bu arma kimin?</div>
+      </div>
+
+      <div class="prompt mt">
+        <img class="club-logo" id="logo" src="" alt="Kulüp logosu">
+        <h2 id="question">Bu logo hangi takıma ait?</h2>
+        <p class="hint" id="hint"></p>
+      </div>
+
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback"></div>
+
+      <div class="center mt" id="endBox" hidden>
+        <h2 id="endTitle"></h2>
+        <p id="endText"></p>
+        <button class="btn green" id="againBtn">Tekrar oyna 🔁</button>
+        <button class="btn yellow" id="levelBtn">Lig değiştir ⚙️</button>
+        <a class="btn ghost" href="hub.html">Oyun menüsü</a>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">Enes &amp; Fatih Mert için ❤️ ile yapıldı</p>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+EG.Auth.guard();
+EG.buildTopbar("Futbol Kulüpleri ⚽", "Armadan takımını bil", "hub.html", { tr: true });
+EGStats.beginSession("futbol");
+
+EG.setLines({
+  good: ["Aferin!", "Bildin! 🎉", "Süper!", "Bu arma onun!", "Bravo!", "Böyle devam!"],
+  bad:  ["Olmadı!", "Tekrar dene!", "Olsun, devam 💪", "Bir sonraki senin!"],
+  idle: ["Bu arma kimin?", "Hazır mısın?", "Yapabilirsin!"]
+});
+
+var TOTAL = 10;
+var $ = function (id) { return document.getElementById(id); };
+
+var setup = { league: "all" };
+var round = 0, score = 0, current = null, last = null;
+var locked = false;
+
+/* lig isimlerine bayrak ekleme (hint ve geri bildirim için) */
+var LEAGUE_FLAG = {
+  "Süper Lig": "🇹🇷", "Premier League": "🏴", "Serie A": "🇮🇹", "La Liga": "🇪🇸"
+};
+
+/* ---------- lig seçimi ---------- */
+$("leagueBox").addEventListener("click", function (e) {
+  var b = e.target.closest(".level");
+  if (!b) return;
+  Array.prototype.forEach.call(this.querySelectorAll(".level"), function (x) { x.classList.remove("on"); });
+  b.classList.add("on");
+  setup.league = b.dataset.league;
+  EG.Sound.init();
+});
+
+function pool() {
+  if (setup.league === "all") return FOOTBALL;
+  return FOOTBALL.filter(function (f) { return f.league === setup.league; });
+}
+
+function leagueLabel(league) {
+  return (LEAGUE_FLAG[league] || "") + " " + league;
+}
+
+/* ---------- oyun akışı ---------- */
+function startGame() {
+  round = 0; score = 0;
+  $("setupCard").hidden = true;
+  $("gameWrap").hidden = false;
+  $("score").textContent = "0";
+  $("best").textContent = EG.Scores.get("futbol");
+  $("qtotal").textContent = TOTAL;
+  $("endBox").hidden = true;
+  $("options").hidden = false;
+  $("logo").hidden = false;
+  nextQuestion();
+}
+
+function nextQuestion() {
+  if (round >= TOTAL) return endGame();
+  round++;
+  locked = false;
+  $("qnum").textContent = round;
+  $("progress").style.width = ((round - 1) / TOTAL * 100) + "%";
+  $("feedback").textContent = "";
+  $("feedback").className = "feedback";
+
+  var p = pool();
+  do { current = p[Math.floor(Math.random() * p.length)]; } while (current === last);
+  last = current;
+
+  $("logo").src = current.logo;
+  $("logo").alt = current.name + " logosu";
+
+  $("question").textContent = "Bu logo hangi takıma ait?";
+  $("hint").textContent = setup.league === "all" ? "Lig: " + leagueLabel(current.league) : "Bu lig: " + leagueLabel(current.league);
+
+  /* yanlış seçenekler: mümkünse aynı ligden */
+  var wrongPool = p.filter(function (f) { return f.name !== current.name; });
+  if (wrongPool.length < 3) wrongPool = FOOTBALL.filter(function (f) { return f.name !== current.name; });
+  var wrong = EG.pickSome(wrongPool, 3);
+  var choices = EG.shuffle([current].concat(wrong));
+
+  var box = $("options");
+  box.innerHTML = "";
+  choices.forEach(function (c) {
+    var b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = c.name;
+    b.dataset.name = c.name;
+    b.addEventListener("click", function () { answer(c, b); });
+    box.appendChild(b);
+  });
+  EG.react("idle");
+}
+
+function answer(choice, btn) {
+  if (locked) return;
+  locked = true;
+  document.querySelectorAll(".opt").forEach(function (b) {
+    b.disabled = true;
+    if (b.dataset.name === current.name) b.classList.add("correct");
+  });
+
+  var isRight = choice.name === current.name;
+  if (isRight) {
+    score += 10;
+    $("score").textContent = score;
+    $("feedback").textContent = "Doğru! " + current.name + " (" + leagueLabel(current.league) + ")";
+    $("feedback").className = "feedback good";
+    EG.Sound.good();
+    EG.react("good");
+  } else {
+    btn.classList.add("wrong");
+    $("feedback").textContent = "Bu arma " + current.name + " takımının.";
+    $("feedback").className = "feedback bad";
+    EG.Sound.bad();
+    EG.react("bad");
+  }
+  EGStats.answer(isRight);
+  EG.speak(current.name);
+  setTimeout(nextQuestion, 2000);
+}
+
+function endGame() {
+  $("progress").style.width = "100%";
+  $("options").hidden = true;
+  $("logo").hidden = true;
+  $("question").textContent = "Oyun bitti!";
+  $("hint").textContent = "";
+  $("feedback").textContent = "";
+
+  var isBest = EGStats.finishRound("futbol", score, TOTAL);
+  $("endBox").hidden = false;
+  $("endTitle").textContent = score + " puan aldın!";
+  $("endText").textContent = isBest ? "Bu yeni bir rekor! 🌟" : "En iyi puanın: " + EG.Scores.get("futbol") + ".";
+  $("best").textContent = EG.Scores.get("futbol");
+  EG.Sound.win();
+  EG.react("good", isBest ? "Yeni rekor! 🏆" : "İyi oyundu!");
+  if (score >= 70) EG.confetti();
+}
+
+/* ---------- girişler ---------- */
+$("startBtn").addEventListener("click", startGame);
+$("againBtn").addEventListener("click", startGame);
+$("levelBtn").addEventListener("click", function () {
+  $("gameWrap").hidden = true;
+  $("setupCard").hidden = false;
+});
+
+EG.startTimer("clock");
+</script>
+</body>
+</html>

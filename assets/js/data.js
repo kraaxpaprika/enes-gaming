@@ -224,3 +224,55 @@ window.TR_WORDS = [
   { emoji: "👵", word: "BABAANNE",  topic: "Ailem" },
   { emoji: "👦", word: "KARDEŞ",    topic: "Ailem" }
 ];
+
+/* ==================================================================
+   Futbol takımları — "Futbol Kulüpleri" oyunu için.
+   logo: Wikipedia'dan armaların thumbnail adresi.
+   Yeni takım eklemek için listenin sonuna bir satır ekleyin:
+     { name: "Bournemouth", league: "Premier League",
+       logo: "https://thumb.wikimedia.org/..." }
+   Lig seçilirse seçenekler sadece o ligin takımlarından gelir.
+   ================================================================== */
+window.FOOTBALL = [
+  // Süper Lig
+  { name: "Galatasaray", league: "Süper Lig",
+    logo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Galatasaray_Sports_Club_Logo.svg/330px-Galatasaray_Sports_Club_Logo.svg.png" },
+  { name: "Fenerbahçe", league: "Süper Lig",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/3/39/Fenerbah%C3%A7e.svg/330px-Fenerbah%C3%A7e.svg.png" },
+  { name: "Beşiktaş", league: "Süper Lig",
+    logo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/BesiktasJK-Logo.svg/330px-BesiktasJK-Logo.svg.png" },
+  { name: "Trabzonspor", league: "Süper Lig",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/d/de/Trabzonspor_Amblem.svg/330px-Trabzonspor_Amblem.svg.png" },
+
+  // Premier League
+  { name: "Arsenal", league: "Premier League",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/330px-Arsenal_FC.svg.png" },
+  { name: "Chelsea", league: "Premier League",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/c/cc/Chelsea_FC.svg/330px-Chelsea_FC.svg.png" },
+  { name: "Liverpool", league: "Premier League",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/0/0c/Liverpool_FC.svg/330px-Liverpool_FC.svg.png" },
+  { name: "Manchester City", league: "Premier League",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/e/eb/Manchester_City_FC_badge.svg/330px-Manchester_City_FC_badge.svg.png" },
+  { name: "Manchester United", league: "Premier League",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/7/7a/Manchester_United_FC_crest.svg/330px-Manchester_United_FC_crest.svg.png" },
+
+  // Serie A
+  { name: "Juventus", league: "Serie A",
+    logo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ed/Juventus_FC_-_logo_black_%28Italy%2C_2020%29.svg/330px-Juventus_FC_-_logo_black_%28Italy%2C_2020%29.svg.png" },
+  { name: "Inter", league: "Serie A",
+    logo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/FC_Internazionale_Milano_2021.svg/330px-FC_Internazionale_Milano_2021.svg.png" },
+  { name: "AC Milan", league: "Serie A",
+    logo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Logo_of_AC_Milan.svg/330px-Logo_of_AC_Milan.svg.png" },
+  { name: "Napoli", league: "Serie A",
+    logo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/SSC_Napoli_2025_%28white_and_azure%29.svg/330px-SSC_Napoli_2025_%28white_and_azure%29.svg.png" },
+
+  // La Liga
+  { name: "Real Madrid", league: "La Liga",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/330px-Real_Madrid_CF.svg.png" },
+  { name: "Barcelona", league: "La Liga",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/330px-FC_Barcelona_%28crest%29.svg.png" },
+  { name: "Atlético Madrid", league: "La Liga",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/f/f9/Atletico_Madrid_Logo_2024.svg/330px-Atletico_Madrid_Logo_2024.svg.png" },
+  { name: "Sevilla", league: "La Liga",
+    logo: "https://thumb.wikimedia.org/wikipedia/en/thumb/3/3b/Sevilla_FC_logo.svg/330px-Sevilla_FC_logo.svg.png" }
+];

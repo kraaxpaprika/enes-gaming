@@ -220,6 +220,7 @@ h1, h2, h3 {
 .game-card.c-math { --accent: var(--blue); }
 .game-card.c-kelime { --accent: var(--purple); }
 .game-card.c-proje { --accent: var(--yellow); }
+.game-card.c-futbol { --accent: var(--green); }
 
 .mini-stats { font-size: 13px; color: var(--ink); margin-top: 12px; font-weight: 700; }
 .mini-stats b { color: var(--ink); }
@@ -270,6 +271,18 @@ h1, h2, h3 {
 @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 .flag-img { width: min(300px, 78%); border-radius: 0; box-shadow: 8px 8px 0 var(--black); border: var(--brut-border); animation: pop .3s ease; }
+
+.club-logo {
+  width: min(220px, 60%);
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background: #fff;
+  padding: 12px;
+  border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--black);
+  border: var(--brut-border);
+  animation: pop .3s ease;
+}
 
 .feedback { text-align: center; font-size: 21px; font-weight: 800; min-height: 32px; margin-top: 16px; }
 .feedback.good { color: #0a8a4a; }

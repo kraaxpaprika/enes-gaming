@@ -15,7 +15,8 @@
     turkey: { name: "Türkiye Explorer", emoji: "🗺️", href: "turkey-provinces.html" },
     math: { name: "Matematik", emoji: "➕", href: "matematik.html" },
     kelime: { name: "Kelime Tamamlama", emoji: "🔤", href: "kelime.html" },
-    proje: { name: "Proje Çocuk", emoji: "🌟", href: "proje-cocuk.html" }
+    proje: { name: "Proje Çocuk", emoji: "🌟", href: "proje-cocuk.html" },
+    futbol: { name: "Futbol Kulüpleri", emoji: "⚽", href: "futbol.html" }
   };
 
   var SCHEMA = 2;   // bump this when the shape of the saved JSON changes

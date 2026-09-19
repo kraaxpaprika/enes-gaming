@@ -14,6 +14,7 @@ Pure static HTML/CSS/JS — no build step, no framework, no server.
 | ➕ **Matematik** (TR) | Addition and subtraction, 1/2/3-digit levels — Turkish interface |
 | 🔤 **Kelime Tamamlama** (TR) | Fill the missing letters of a Turkish word by drag & drop |
 | 🌟 **Proje Çocuk** (TR) | A one-file endless runner: run, jump, collect — a gentle satire of over-scheduled childhood |
+| ⚽ **Futbol Kulüpleri** (TR) | Guess the football club from its crest — Süper Lig, Premier League, Serie A, La Liga |
 | 📊 **My Progress** | Scores, play time, streaks, badges, history, and the per-player table |
 
 ## Log in
@@ -104,6 +105,8 @@ Words and countries live in [`assets/js/data.js`](assets/js/data.js):
 ```js
 window.WORDS.push({ emoji: "🐍", word: "snake", topic: "Animals" });
 window.COUNTRIES.push({ code: "ie", name: "Ireland", capital: "Dublin", continent: "Europe" });
+window.FOOTBALL.push({ name: "Eintracht Frankfurt", league: "Serie A",
+                       logo: "https://thumb.wikimedia.org/..." });
 
 // Turkish words for Kelime Tamamlama - always UPPERCASE
 window.TR_WORDS.push({ emoji: "🐍", word: "YILAN", topic: "Hayvanlar" });
@@ -121,7 +124,8 @@ joke means adding a line there; the engine itself does not change. Two collectib
 the design: `proj` items sit right in the running lane, `joy` items drift higher as the child
 gets older. Append `?fast=10` to the URL to run a whole childhood in ~20 seconds while testing.
 
-Flag pictures come from `flagcdn.com` using the two-letter country code.
+Flag pictures come from `flagcdn.com` using the two-letter country code. Football crests come from
+Wikimedia/Wikipedia thumbnails — the `logo` field in `FOOTBALL` is the image URL.
 
 ## Mascot
 
