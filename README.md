@@ -1,6 +1,6 @@
 # Enes & Fatih Mert Gaming 🎮
 
-A password-protected learning site for a 7-year-old: English vocabulary and world geography.
+A learning site for a 7-year-old: English vocabulary and world geography.
 Pure static HTML/CSS/JS — no build step, no framework, no server.
 
 ## Games
@@ -17,19 +17,9 @@ Pure static HTML/CSS/JS — no build step, no framework, no server.
 | ⚽ **Futbol Kulüpleri** (TR) | Guess the football club from its crest — Süper Lig, Premier League, Serie A, La Liga |
 | 📊 **My Progress** | Scores, play time, streaks, badges, history, and the per-player table |
 
-## Log in
-
-Password: **`1031`**
-
-To change it, open the browser console and run `btoa("newpassword")`, then paste the result into
-`passwordHash` in [`assets/js/config.js`](assets/js/config.js).
-
-> This is a friendly gate, not real security. Everything runs in the browser, so anyone who reads
-> the page source can find the password. Do not put anything private on the site.
-
 ## Players
 
-After the password, the site asks **"Kim oynuyor?"** and the child picks a profile. The list
+The start page asks **"Kim oynuyor?"** and the child picks a profile. The list
 lives in `players` in [`assets/js/config.js`](assets/js/config.js):
 
 ```js

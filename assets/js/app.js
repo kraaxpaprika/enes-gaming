@@ -1,9 +1,8 @@
 /* ==================================================================
-   Shared helpers: login guard, header, mascot, sounds, confetti.
+   Shared helpers: player guard, header, mascot, sounds, confetti.
    ================================================================== */
 (function () {
   var CFG = window.GAME_CONFIG || {};
-  var SESSION_KEY = "eg_logged_in";
   var PLAYER_KEY = "eg_player";
 
   /* ---------- who is playing ---------- */
@@ -34,22 +33,14 @@
     clear: function () { try { localStorage.removeItem(PLAYER_KEY); } catch (e) {} }
   };
 
-  /* ---------- login ---------- */
+  /* ---------- player guard (no password, anyone can play) ---------- */
   var Auth = {
-    check: function (typed) {
-      var expected = "";
-      try { expected = atob(CFG.passwordHash || ""); } catch (e) { expected = ""; }
-      return String(typed).trim().toLowerCase() === expected.toLowerCase();
-    },
-    login: function () { sessionStorage.setItem(SESSION_KEY, "yes"); },
     logout: function () {
-      sessionStorage.removeItem(SESSION_KEY);
       Players.clear();
       location.href = "index.html";
     },
-    isLoggedIn: function () { return sessionStorage.getItem(SESSION_KEY) === "yes"; },
     guard: function () {
-      if (!Auth.isLoggedIn() || !Players.current()) { location.replace("index.html"); return; }
+      if (!Players.current()) { location.replace("index.html"); return; }
       if (window.EGStats) EGStats.usePlayer(Players.currentId());
     }
   };

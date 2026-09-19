@@ -107,18 +107,8 @@
 <script src="assets/js/config.js"></script>
 <script src="assets/js/stats.js"></script>
 <script src="assets/js/app.js"></script>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-database.js"></script>
-<script src="assets/js/firebase.init.js"></script>
-<script>
-  // Initialize Firebase sync on page load
-  const uid = localStorage.getItem("eg_player") || "guest";
-  if (uid !== "guest") {
-    window.firebaseSync.syncPlayerDataToFirebase();
-    window.firebaseSync.listenForFirebaseUpdates();
-  }
-</script>
+<!-- Firebase: progress sync -->
+<script type="module" src="assets/js/firebase.init.js"></script>
 <script>
 EG.Auth.guard();
 var me = EG.Players.current();

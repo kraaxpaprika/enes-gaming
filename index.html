@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Enes &amp; Fatih Mert Gaming — Log in</title>
+<title>Enes &amp; Fatih Mert Gaming</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,37 +13,11 @@
 <body>
 
 <div class="login-wrap">
-  <form class="login-card" id="loginForm" autocomplete="off">
-    <img class="mascot lg" id="mascot" src="assets/img/mascot.svg" alt="Mascot">
-    <h1>Enes &amp; Fatih Mert Gaming</h1>
-    <p class="sub">Learn English &amp; explore the world 🌍</p>
-
-    <input type="password" id="pw" inputmode="numeric" maxlength="8"
-           placeholder="••••" aria-label="Password" autofocus>
-
-    <div class="keypad" id="keypad">
-      <button type="button" data-k="1">1</button>
-      <button type="button" data-k="2">2</button>
-      <button type="button" data-k="3">3</button>
-      <button type="button" data-k="4">4</button>
-      <button type="button" data-k="5">5</button>
-      <button type="button" data-k="6">6</button>
-      <button type="button" data-k="7">7</button>
-      <button type="button" data-k="8">8</button>
-      <button type="button" data-k="9">9</button>
-      <button type="button" class="wide" data-k="clear">Clear</button>
-      <button type="button" data-k="0">0</button>
-      <button type="button" class="wide" data-k="del">⌫</button>
-    </div>
-
-    <button class="btn red" type="submit" style="width:100%">Let's play! 🎮</button>
-    <div class="error" id="err"></div>
-  </form>
-
-  <!-- shown after the password: who is playing today? -->
-  <div class="login-card" id="whoCard" hidden>
+  <!-- who is playing today? -->
+  <div class="login-card" id="whoCard">
     <img class="mascot lg" src="assets/img/mascot.svg" alt="Mascot">
-    <h1>Kim oynuyor?</h1>
+    <h1>Enes &amp; Fatih Mert Gaming</h1>
+    <p class="sub">Kim oynuyor? 🎮</p>
     <p class="sub">Puanların ve süren sana özel kaydedilir 🏅</p>
     <div class="who-list" id="whoList"></div>
   </div>
@@ -51,77 +25,19 @@
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/app.js"></script>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-database.js"></script>
-<script src="assets/js/firebase.init.js"></script>
 <script>
-  // Initialize Firebase sync on page load
-  const uid = localStorage.getItem("eg_player") || "guest";
-  if (uid !== "guest") {
-    window.firebaseSync.syncPlayerDataToFirebase();
-    window.firebaseSync.listenForFirebaseUpdates();
-  }
-</script>
-<script>
-  var pw = document.getElementById("pw");
-  var err = document.getElementById("err");
-  var mascot = document.getElementById("mascot");
-
-  var form = document.getElementById("loginForm");
-  var whoCard = document.getElementById("whoCard");
-
-  /* ---------- step 2: pick the player ---------- */
-  function showWhoStep() {
-    form.hidden = true;
-    whoCard.hidden = false;
-    var list = document.getElementById("whoList");
-    list.innerHTML = "";
-    EG.Players.list().forEach(function (p) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "who-btn";
-      b.innerHTML = '<span class="e">' + p.emoji + '</span><span class="n">' + p.name + '</span>';
-      b.addEventListener("click", function () {
-        EG.Sound.good();
-        EG.Players.select(p.id);
-        location.href = "hub.html";
-      });
-      list.appendChild(b);
-    });
-  }
-
-  if (EG.Auth.isLoggedIn()) {
-    if (EG.Players.current()) location.replace("hub.html");
-    else showWhoStep();
-  }
-
-  document.getElementById("keypad").addEventListener("click", function (e) {
-    var b = e.target.closest("button");
-    if (!b) return;
-    var k = b.dataset.k;
-    if (k === "clear") pw.value = "";
-    else if (k === "del") pw.value = pw.value.slice(0, -1);
-    else if (pw.value.length < 8) pw.value += k;
-    EG.Sound.init();
-    err.textContent = "";
-    pw.focus();
-  });
-
-  document.getElementById("loginForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    if (EG.Auth.check(pw.value)) {
+  var list = document.getElementById("whoList");
+  EG.Players.list().forEach(function (p) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "who-btn";
+    b.innerHTML = '<span class="e">' + p.emoji + '</span><span class="n">' + p.name + '</span>';
+    b.addEventListener("click", function () {
       EG.Sound.good();
-      mascot.classList.add("cheer");
-      EG.Auth.login();
-      setTimeout(showWhoStep, 380);
-    } else {
-      err.textContent = "Oops! Wrong password 🔑";
-      EG.Sound.bad();
-      mascot.classList.remove("sad"); void mascot.offsetWidth; mascot.classList.add("sad");
-      pw.value = "";
-      pw.focus();
-    }
+      EG.Players.select(p.id);
+      location.href = "hub.html";
+    });
+    list.appendChild(b);
   });
 </script>
 </body>
